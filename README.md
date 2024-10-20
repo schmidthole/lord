@@ -13,7 +13,7 @@ project. This means a bunch of stuff can be running already.
 2. A registry to push and pull docker images from.
 3. A `lord.yml` file in the current directory alongside the `Dockerfile`
 
-Simply run `lord` in the current directory (assuming the binar is in your path) and the following will happen:
+Simply run `lord` in the current directory (assuming the binary is in your path) and the following will happen:
 
 1. Your docker container will be built.
 2. The container will be pushed to the specified registry.
@@ -32,7 +32,7 @@ Your project's `lord.yml` should look like this:
 name: test
 
 # container registry
-registry: registry.digitalocean.com/samba
+registry: my.real.registry.com/me
 
 # registry username and password
 username: theuser
@@ -48,6 +48,19 @@ volumes:
 # an optional builder platform for the docker container. this will default to linux/amd64
 platform: linux/amd64
 ```
+
+## Installation
+
+1. Install Go
+2. Clone this repo and run:
+
+```sh
+make build
+```
+
+3. Put the `lord` binary somewhere in your `$PATH`. 
+
+*Better install script/instructions to come in the future.*
 
 ## Roadmap
 
