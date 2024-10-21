@@ -337,6 +337,25 @@ func main() {
 
 	flag.Parse()
 
+	if *initFlag {
+		_, err := os.Stat("lord.yml")
+		if err == nil {
+			fmt.Println("lord already initialized in current directory")
+			return
+		} else if os.IsNotExist(err) {
+			err := os.WriteFile("lord.yml", []byte(baseConfig), 0644)
+			if err != nil {
+				panic(err)
+			} else {
+				fmt.Println("lord initialized successfully in current directory")
+			}
+		} else {
+			panic(err)
+		}
+
+		return
+	}
+
 	c, err := loadConfig()
 	if err != nil {
 		panic(err)
@@ -399,21 +418,6 @@ func main() {
 
 		err = streamContainerLogs(client, c.Name)
 		if err != nil {
-			panic(err)
-		}
-	} else if *initFlag {
-		_, err := os.Stat("lord.yml")
-		if err == nil {
-			fmt.Println("lord already initialized in current directory")
-			return
-		} else if os.IsNotExist(err) {
-			err := os.WriteFile("lord.yml", []byte(baseConfig), 0644)
-			if err != nil {
-				panic(err)
-			} else {
-				fmt.Println("lord initialized successfully in current directory")
-			}
-		} else {
 			panic(err)
 		}
 	} else if *destroyFLag {
