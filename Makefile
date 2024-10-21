@@ -1,5 +1,10 @@
-build:
+lord: main.go
 	go build -o lord .
 
-run:
-	go run .
+build: lord
+
+install: lord
+	sudo cp lord /usr/local/bin
+
+clean:
+	rm -f lord

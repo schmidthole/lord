@@ -2,11 +2,15 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh"
@@ -26,6 +30,15 @@ var banner = `
    \:\__\    \::/  /       |:|  |        \::/__/   
     \/__/     \/__/         \|__|         ~~       
 
+`
+
+var baseConfig = `name: myapp
+registry: my.realregistry.com/me
+username: user
+password: password
+server: 0.0.0.0
+volumes:
+ - /etc/test/data:/data
 `
 
 type config struct {
@@ -244,11 +257,15 @@ func pullContainer(client *ssh.Client, imageTag string) error {
 	return nil
 }
 
-func runContainer(client *ssh.Client, name string, imageTag string, volumes []string) error {
+func stopAndDeleteContainer(client *ssh.Client, name string) error {
+	fmt.Println("stopping and deleting container if exists")
+
 	_, _, err := runSSHCommand(client, fmt.Sprintf("docker stop | true %s && docker rm --force %s", name, name))
-	if err != nil {
-		return err
-	}
+	return err
+}
+
+func runContainer(client *ssh.Client, name string, imageTag string, volumes []string) error {
+	fmt.Println("running container")
 
 	runCommand := "docker run -d --restart unless-stopped"
 	runCommand += fmt.Sprintf(" --name %s", name)
@@ -257,7 +274,7 @@ func runContainer(client *ssh.Client, name string, imageTag string, volumes []st
 	}
 	runCommand += fmt.Sprintf(" %s", imageTag)
 
-	_, _, err = runSSHCommand(client, runCommand)
+	_, _, err := runSSHCommand(client, runCommand)
 	if err != nil {
 		return err
 	}
@@ -265,52 +282,157 @@ func runContainer(client *ssh.Client, name string, imageTag string, volumes []st
 	return nil
 }
 
+func streamContainerLogs(client *ssh.Client, name string) error {
+	fmt.Println("streaming container logs...")
+
+	session, err := client.NewSession()
+	if err != nil {
+		return err
+	}
+	defer session.Close()
+
+	stdout, err := session.StdoutPipe()
+	if err != nil {
+		return err
+	}
+
+	err = session.Start(fmt.Sprintf("docker logs --follow %s", name))
+	if err != nil {
+		return err
+	}
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	done := make(chan bool, 1)
+	go func() {
+		<-sigs
+		fmt.Println("stopping...")
+		session.Signal(ssh.SIGKILL)
+		session.Close()
+		done <- true
+	}()
+
+	go func() {
+		_, err := io.Copy(os.Stdout, stdout)
+		if err != nil {
+			fmt.Printf("error streaming container logs: %v", err)
+		}
+		done <- true
+	}()
+
+	<-done
+	fmt.Println("end log stream")
+
+	return nil
+}
+
 func main() {
 	fmt.Println(banner)
+
+	deployFlag := flag.Bool("deploy", false, "build and deploy the container")
+	logsFlag := flag.Bool("logs", false, "get logs from the running container")
+	initFlag := flag.Bool("init", false, "initialize lord config in current directory")
+	destroyFLag := flag.Bool("destroy", false, "stop and delete a running container")
+
+	flag.Parse()
 
 	c, err := loadConfig()
 	if err != nil {
 		panic(err)
 	}
 
-	imageTag := fmt.Sprintf("%s/%s:latest", c.Registry, c.Name)
+	if *deployFlag {
+		imageTag := fmt.Sprintf("%s/%s:latest", c.Registry, c.Name)
 
-	err = buildAndPushContainer(c.Name, imageTag, c.Platform)
-	if err != nil {
-		panic(err)
+		err = buildAndPushContainer(c.Name, imageTag, c.Platform)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("connecting server: %s\n", c.Server)
+
+		client, err := getSSHClient(c.Server)
+		if err != nil {
+			panic(err)
+		}
+		defer client.Close()
+
+		fmt.Println("checking server state")
+
+		err = ensureDockerInstalled(client, c.Username, c.Password)
+		if err != nil {
+			panic(err)
+		}
+
+		err = ensureDockerRunning(client)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println("updating and running container on server")
+
+		err = pullContainer(client, imageTag)
+		if err != nil {
+			panic(err)
+		}
+
+		err = stopAndDeleteContainer(client, c.Name)
+		if err != nil {
+			panic(err)
+		}
+
+		err = runContainer(client, c.Name, imageTag, c.Volumes)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println("finished deployment")
+	} else if *logsFlag {
+		fmt.Printf("connecting server: %s\n", c.Server)
+
+		client, err := getSSHClient(c.Server)
+		if err != nil {
+			panic(err)
+		}
+		defer client.Close()
+
+		err = streamContainerLogs(client, c.Name)
+		if err != nil {
+			panic(err)
+		}
+	} else if *initFlag {
+		_, err := os.Stat("lord.yml")
+		if err == nil {
+			fmt.Println("lord already initialized in current directory")
+			return
+		} else if os.IsNotExist(err) {
+			err := os.WriteFile("lord.yml", []byte(baseConfig), 0644)
+			if err != nil {
+				panic(err)
+			} else {
+				fmt.Println("lord initialized successfully in current directory")
+			}
+		} else {
+			panic(err)
+		}
+	} else if *destroyFLag {
+		fmt.Printf("connecting server: %s\n", c.Server)
+
+		client, err := getSSHClient(c.Server)
+		if err != nil {
+			panic(err)
+		}
+		defer client.Close()
+
+		err = stopAndDeleteContainer(client, c.Name)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		fmt.Println("No command specified\n\nUsage:")
+		flag.VisitAll(func(f *flag.Flag) {
+			fmt.Printf("-%s: %s\n", f.Name, f.Usage)
+		})
 	}
-
-	fmt.Printf("connecting server: %s\n", c.Server)
-
-	client, err := getSSHClient(c.Server)
-	if err != nil {
-		panic(err)
-	}
-	defer client.Close()
-
-	fmt.Println("checking server state")
-
-	err = ensureDockerInstalled(client, c.Username, c.Password)
-	if err != nil {
-		panic(err)
-	}
-
-	err = ensureDockerRunning(client)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("updating and running container on server")
-
-	err = pullContainer(client, imageTag)
-	if err != nil {
-		panic(err)
-	}
-
-	err = runContainer(client, c.Name, imageTag, c.Volumes)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("finished deployment")
 }
