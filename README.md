@@ -13,15 +13,27 @@ project. This means a bunch of stuff can be running already.
 2. A registry to push and pull docker images from.
 3. A `lord.yml` file in the current directory alongside the `Dockerfile`
 
-Simply run `lord` in the current directory (assuming the binary is in your path) and the following will happen:
+## Usage
 
-1. Your docker container will be built.
+*Assuming the `lord` binary is in your `$PATH`*
+
+Run `lord -init` to create a base `lord.yml` config file in your current directory.
+
+Run `lord -deploy` and the following will happen:
+
+1. Your docker container described by the `Dockerfile` in your current directory will be built.
 2. The container will be pushed to the specified registry.
 3. `lord` will use ssh to:
   1. Ensure docker is running and installed on the specified server.
   2. Ensure your server is logged into the specified registry.
   3. Pull the container from the registry onto the server.
   4. Run the container on the server using the specified options.
+
+Run `lord -logs` to stream container logs from your server.
+
+Run `lord -destroy` to remove any running containers from your server associated with the config in the
+current directory.
+
 
 ## Lord Config File Format
 
@@ -58,7 +70,13 @@ platform: linux/amd64
 make build
 ```
 
-3. Put the `lord` binary somewhere in your `$PATH`. 
+3. Put the `lord` binary somewhere in your `$PATH`, or run:
+
+``` sh
+make install
+```
+
+to put it in `/usr/local/bin` (requires sudo).
 
 *Better install script/instructions to come in the future.*
 
@@ -66,4 +84,4 @@ make build
 
 * [ ] Exposing web services via ports.
 * [ ] Auto configuration of a reverse proxy with ssl certs.
-* [ ] Log streaming/viewing.
+* [x] Log streaming/viewing.
