@@ -296,6 +296,11 @@ func streamContainerLogs(client *ssh.Client, name string) error {
 		return err
 	}
 
+	stderr, err := session.StderrPipe()
+	if err != nil {
+		return err
+	}
+
 	err = session.Start(fmt.Sprintf("docker logs --follow %s", name))
 	if err != nil {
 		return err
@@ -316,7 +321,15 @@ func streamContainerLogs(client *ssh.Client, name string) error {
 	go func() {
 		_, err := io.Copy(os.Stdout, stdout)
 		if err != nil {
-			fmt.Printf("error streaming container logs: %v", err)
+			fmt.Printf("error streaming container logs stdout: %v", err)
+		}
+		done <- true
+	}()
+
+	go func() {
+		_, err := io.Copy(os.Stderr, stderr)
+		if err != nil {
+			fmt.Printf("error streaming container logs stderr: %v", err)
 		}
 		done <- true
 	}()
