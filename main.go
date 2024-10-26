@@ -264,6 +264,13 @@ func stopAndDeleteContainer(client *ssh.Client, name string) error {
 	return err
 }
 
+func getContainerStatus(client *ssh.Client, name string) error {
+	fmt.Println("getting container status")
+
+	_, _, err := runSSHCommand(client, fmt.Sprintf("docker ps --filter name=%s", name))
+	return err
+}
+
 func runContainer(client *ssh.Client, name string, imageTag string, volumes []string) error {
 	fmt.Println("running container")
 
@@ -301,7 +308,7 @@ func streamContainerLogs(client *ssh.Client, name string) error {
 		return err
 	}
 
-	err = session.Start(fmt.Sprintf("docker logs --follow %s", name))
+	err = session.Start(fmt.Sprintf("docker logs --follow --tail 30 %s", name))
 	if err != nil {
 		return err
 	}
@@ -347,6 +354,7 @@ func main() {
 	logsFlag := flag.Bool("logs", false, "get logs from the running container")
 	initFlag := flag.Bool("init", false, "initialize lord config in current directory")
 	destroyFLag := flag.Bool("destroy", false, "stop and delete a running container")
+	statusFlag := flag.Bool("status", false, "get the status of a running container")
 
 	flag.Parse()
 
@@ -443,6 +451,19 @@ func main() {
 		defer client.Close()
 
 		err = stopAndDeleteContainer(client, c.Name)
+		if err != nil {
+			panic(err)
+		}
+	} else if *statusFlag {
+		fmt.Printf("connecting server: %s\n", c.Server)
+
+		client, err := getSSHClient(c.Server)
+		if err != nil {
+			panic(err)
+		}
+		defer client.Close()
+
+		err = getContainerStatus(client, c.Name)
 		if err != nil {
 			panic(err)
 		}
