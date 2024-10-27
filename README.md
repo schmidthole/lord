@@ -13,6 +13,13 @@ project. This means a bunch of stuff can be running already.
 2. A registry to push and pull docker images from.
 3. A `lord.yml` file in the current directory alongside the `Dockerfile`
 
+## Container Requirements
+
+To keep things ultra simple, lord requires the following from any containers deployed:
+
+* If the container hosts a web service, it must expose this on its internal port `80`.
+* Lord provides a volume mount internal to the container at `/data`. If the container needs to store any persistent data, it must be done at this location.
+
 ## Usage
 
 *Assuming the `lord` binary is in your `$PATH`*
@@ -52,10 +59,6 @@ password: abcdefghijklmnopqrstuvwxyz
 
 # the server to deploy to. lord will use the root user and ssh key authentication by default
 server: 161.35.141.177
-
-# an optional list of persistent volumes your container requires
-volumes:
- - /etc/test/data:/data
 
 # an optional builder platform for the docker container. this will default to linux/amd64
 platform: linux/amd64

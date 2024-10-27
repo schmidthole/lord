@@ -1,4 +1,4 @@
-lord: main.go
+lord: config.go local.go main.go remote.go ssh_utils.go go.mod go.sum
 	go build -o lord .
 
 build: lord

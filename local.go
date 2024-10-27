@@ -70,8 +70,11 @@ func initLocalProject() error {
 }
 
 func displayHelp() {
-	fmt.Println("No command specified\n\nUsage:")
 	flag.VisitAll(func(f *flag.Flag) {
 		fmt.Printf("-%s: %s\n", f.Name, f.Usage)
 	})
+}
+
+func displayVerison() {
+	fmt.Printf("\n version: %s\n\n\n", version)
 }

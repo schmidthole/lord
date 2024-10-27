@@ -11,8 +11,6 @@ registry: my.realregistry.com/me
 username: user
 password: password
 server: 0.0.0.0
-volumes:
- - /etc/test/data:/data
 `
 
 type Config struct {
@@ -21,7 +19,6 @@ type Config struct {
 	Username string
 	Password string
 	Server   string
-	Volumes  []string
 	Platform string
 }
 

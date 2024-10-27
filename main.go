@@ -14,6 +14,8 @@ var banner = `
                                            
 `
 
+var version = "0"
+
 func main() {
 	fmt.Println(banner)
 
@@ -23,6 +25,7 @@ func main() {
 	destroyFLag := flag.Bool("destroy", false, "stop and delete a running container")
 	statusFlag := flag.Bool("status", false, "get the status of a running container")
 	helpFlag := flag.Bool("help", false, "get help with commands")
+	versionFlag := flag.Bool("version", false, "get lord version")
 
 	flag.Parse()
 
@@ -34,7 +37,18 @@ func main() {
 	})
 
 	if *helpFlag || noFlagsSet {
+		if noFlagsSet {
+			fmt.Println("No command specified\n\nUsage:")
+		}
+
+		displayVerison()
 		displayHelp()
+		return
+	}
+
+	if *versionFlag {
+		displayVerison()
+		return
 	}
 
 	if *initFlag {
@@ -107,7 +121,6 @@ func main() {
 			panic(err)
 		}
 	} else {
-		fmt.Println("No command specified\n\nUsage:")
-		displayHelp()
+		panic(fmt.Errorf("not a valid command"))
 	}
 }
