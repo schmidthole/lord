@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -66,4 +67,11 @@ func initLocalProject() error {
 	} else {
 		return fmt.Errorf("error initializing lord config: %v", err)
 	}
+}
+
+func displayHelp() {
+	fmt.Println("No command specified\n\nUsage:")
+	flag.VisitAll(func(f *flag.Flag) {
+		fmt.Printf("-%s: %s\n", f.Name, f.Usage)
+	})
 }

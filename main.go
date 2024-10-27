@@ -6,19 +6,12 @@ import (
 )
 
 var banner = `
-
-     ___       ___           ___           ___     
-    /\__\     /\  \         /\  \         /\  \    
-   /:/  /    /::\  \       /::\  \       /::\  \   
-  /:/  /    /:/\:\  \     /:/\:\  \     /:/\:\  \  
- /:/  /    /:/  \:\  \   /::\~\:\  \   /:/  \:\__\ 
-/:/__/    /:/__/ \:\__\ /:/\:\ \:\__\ /:/__/ \:|__|
-\:\  \    \:\  \ /:/  / \/_|::\/:/  / \:\  \ /:/  /
- \:\  \    \:\  /:/  /     |:|::/  /   \:\  /:/  / 
-  \:\  \    \:\/:/  /      |:|\/__/     \:\/:/  /  
-   \:\__\    \::/  /       |:|  |        \::/__/   
-    \/__/     \/__/         \|__|         ~~       
-
+ __         ______     ______     _____    
+/\ \       /\  __ \   /\  == \   /\  __-.  
+\ \ \____  \ \ \/\ \  \ \  __<   \ \ \/\ \ 
+ \ \_____\  \ \_____\  \ \_\ \_\  \ \____- 
+  \/_____/   \/_____/   \/_/ /_/   \/____/ 
+                                           
 `
 
 func main() {
@@ -29,8 +22,20 @@ func main() {
 	initFlag := flag.Bool("init", false, "initialize lord config in current directory")
 	destroyFLag := flag.Bool("destroy", false, "stop and delete a running container")
 	statusFlag := flag.Bool("status", false, "get the status of a running container")
+	helpFlag := flag.Bool("help", false, "get help with commands")
 
 	flag.Parse()
+
+	noFlagsSet := true
+	flag.VisitAll(func(f *flag.Flag) {
+		if f.Value.String() == "true" {
+			noFlagsSet = false
+		}
+	})
+
+	if *helpFlag || noFlagsSet {
+		displayHelp()
+	}
 
 	if *initFlag {
 		err := initLocalProject()
@@ -103,8 +108,6 @@ func main() {
 		}
 	} else {
 		fmt.Println("No command specified\n\nUsage:")
-		flag.VisitAll(func(f *flag.Flag) {
-			fmt.Printf("-%s: %s\n", f.Name, f.Usage)
-		})
+		displayHelp()
 	}
 }
