@@ -15,7 +15,7 @@ entryPoints:
     address: ":443"
 
 certificatesResolvers:
-  myresolver:
+  theresolver:
     acme:
       email: %v
       storage: acme.json
