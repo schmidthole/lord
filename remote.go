@@ -25,17 +25,17 @@ func (r *remote) ensureDockerInstalled(username string, password string) error {
 
 		cmds := []string{
 			"apt-get update",
-			"apt-get upgrade",
-			"for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done",
+			"apt-get upgrade -y",
+			"for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove -y $pkg; done",
 			"apt-get update",
-			"apt-get install ca-certificates curl",
+			"apt-get install -y ca-certificates curl",
 			"install -m 0755 -d /etc/apt/keyrings",
 			"curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc",
 			"chmod a+r /etc/apt/keyrings/docker.asc",
 			"echo \\ \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \\ $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable\" | \\ tee /etc/apt/sources.list.d/docker.list > /dev/null",
 			"apt-get update",
 			"echo \"{\"log-driver\": \"local\"}\" | tee /etc/docker/daemon.json > /dev/null",
-			"systemcrl enable docker",
+			"systemctl enable docker",
 			"systemctl restart docker",
 			fmt.Sprintf("docker login registry.digitalocean.com --username %s --password %s", username, password),
 		}
