@@ -103,13 +103,18 @@ func (r *remote) getContainerStatus(name string) error {
 	})
 }
 
-func (r *remote) runContainer(name string, imageTag string) error {
+func (r *remote) runContainer(name string, imageTag string, volumes []string) error {
 	return withSSHClient(r.address, func(client *ssh.Client) error {
 		fmt.Println("running container")
 
 		runCommand := "docker run -d --restart unless-stopped"
 		runCommand += fmt.Sprintf(" --name %s", name)
 		runCommand += fmt.Sprintf(" -v /var/%s:/data", name)
+
+		for _, volume := range volumes {
+			runCommand += fmt.Sprintf(" -v %s", volume)
+		}
+
 		runCommand += fmt.Sprintf(" %s", imageTag)
 
 		_, _, err := runSSHCommand(client, runCommand)
