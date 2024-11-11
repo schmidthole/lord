@@ -20,6 +20,7 @@ type Config struct {
 	Password string
 	Server   string
 	Platform string
+	Volumes  []string
 }
 
 func loadConfig() (*Config, error) {
