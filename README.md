@@ -18,7 +18,8 @@ project. This means a bunch of stuff can be running already.
 To keep things ultra simple, lord requires the following from any containers deployed:
 
 * If the container hosts a web service, it must expose this on its internal port `80`.
-* Lord provides a volume mount internal to the container at `/data`. If the container needs to store any persistent data, it must be done at this location.
+* Lord provides a volume mount internal to the container at `/data`. If the container needs to store any persistent data. The `Dockerfile` will need to declare this as well.
+* Additional volumes can be specified in the `lord.yml`, these will also need to be exposed in the `Dockerfile`.
 
 ## Usage
 
@@ -62,6 +63,10 @@ server: 161.35.141.177
 
 # an optional builder platform for the docker container. this will default to linux/amd64
 platform: linux/amd64
+
+# optional volumes to mount in addition to the default. these follow the standard docker cli format for volumes.
+volumes:
+    - /etc/app:/config
 ```
 
 ## Installation
@@ -85,6 +90,5 @@ to put it in `/usr/local/bin` (requires sudo).
 
 ## Roadmap
 
-* [ ] Exposing web services via ports.
 * [ ] Auto configuration of a reverse proxy with ssl certs.
 * [x] Log streaming/viewing.
