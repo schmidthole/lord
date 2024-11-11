@@ -11,6 +11,8 @@ project. This means a bunch of stuff can be running already.
 
 1. A `Dockerfile` in the current directory to build.
 2. A registry to push and pull docker images from.
+   * You must be logged into your registry locally. `lord` will not do this for you.
+   * Part of the configuration of `lord` requires that you provide a `config.json` file with "at least" read-only auth credentials to your registry. This will be placed on the server.
 3. A `lord.yml` file in the current directory alongside the `Dockerfile`
 
 ## Container Requirements
@@ -54,9 +56,11 @@ name: test
 # container registry
 registry: my.real.registry.com/me
 
-# registry username and password
-username: theuser
-password: abcdefghijklmnopqrstuvwxyz
+# email for tls certs
+email: theuser@example.com
+
+# docker auth file to place on the server
+authfile: path/to/config.json
 
 # the server to deploy to. lord will use the root user and ssh key authentication by default
 server: 161.35.141.177

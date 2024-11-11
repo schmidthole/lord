@@ -8,16 +8,16 @@ import (
 
 var baseConfig = `name: myapp
 registry: my.realregistry.com/me
-username: user
-password: password
+email: user
+authfile: ./config.json
 server: 0.0.0.0
 `
 
 type Config struct {
 	Name     string
 	Registry string
-	Username string
-	Password string
+	Email    string
+	AuthFile string
 	Server   string
 	Platform string
 	Volumes  []string

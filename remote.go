@@ -14,11 +14,19 @@ type remote struct {
 	address string
 }
 
-func (r *remote) ensureDockerInstalled(username string, password string) error {
+func (r *remote) ensureDockerInstalled(authFile string, recover bool) error {
 	return withSSHClient(r.address, func(client *ssh.Client) error {
-		_, _, err := runSSHCommand(client, "docker --version")
-		if err == nil {
-			return nil
+		if !recover {
+			_, _, err := runSSHCommand(client, "docker --version")
+			if err == nil {
+				return nil
+			}
+		}
+
+		fmt.Println("reading docker auth file")
+		authContents, err := os.ReadFile(authFile)
+		if err != nil {
+			return err
 		}
 
 		fmt.Println("installing docker on server")
@@ -32,12 +40,15 @@ func (r *remote) ensureDockerInstalled(username string, password string) error {
 			"install -m 0755 -d /etc/apt/keyrings",
 			"curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc",
 			"chmod a+r /etc/apt/keyrings/docker.asc",
-			"echo \\ \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \\ $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable\" | \\ tee /etc/apt/sources.list.d/docker.list > /dev/null",
+			"echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable\" | /bin/tee /etc/apt/sources.list.d/docker.list > /dev/null",
 			"apt-get update",
-			"echo \"{\"log-driver\": \"local\"}\" | tee /etc/docker/daemon.json > /dev/null",
+			"apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
+			"echo \"{\\\"log-driver\\\": \\\"local\\\"}\" | tee /etc/docker/daemon.json > /dev/null",
 			"systemctl enable docker",
 			"systemctl restart docker",
-			fmt.Sprintf("docker login registry.digitalocean.com --username %s --password %s", username, password),
+			"mkdir -p /root/.docker/",
+			"touch /root/.docker/config.json",
+			fmt.Sprintf("echo \"%s\" | tee /root/.docker/config.json > /dev/null", string(authContents)),
 		}
 
 		for _, cmd := range cmds {
