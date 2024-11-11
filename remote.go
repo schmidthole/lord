@@ -103,7 +103,7 @@ func (r *remote) getContainerStatus(name string) error {
 	})
 }
 
-func (r *remote) runContainer(name string, imageTag string, volumes []string) error {
+func (r *remote) runContainer(name string, imageTag string, volumes []string, web bool, hostname string) error {
 	return withSSHClient(r.address, func(client *ssh.Client) error {
 		fmt.Println("running container")
 
@@ -113,6 +113,15 @@ func (r *remote) runContainer(name string, imageTag string, volumes []string) er
 
 		for _, volume := range volumes {
 			runCommand += fmt.Sprintf(" -v %s", volume)
+		}
+
+		if web {
+			runCommand += "--label \"traefik.enable=true\""
+			runCommand += fmt.Sprintf("--label \"traefik.http.routers.my-service.rule=Host(`%s`)\"", hostname)
+			runCommand += "--label \"traefik.http.routers.my-service.entryPoints=websecure\""
+			runCommand += "--label \"traefik.http.routers.my-service.tls.certresolver=theresolver\""
+			runCommand += "--label \"traefik.http.services.my-service.loadbalancer.server.port=80\""
+			runCommand += "--network traefik"
 		}
 
 		runCommand += fmt.Sprintf(" %s", imageTag)
