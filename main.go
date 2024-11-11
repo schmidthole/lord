@@ -87,6 +87,11 @@ func main() {
 			panic(err)
 		}
 
+		err = server.ensureTraefikSetup(c.Username)
+		if err != nil {
+			panic(err)
+		}
+
 		fmt.Println("updating and running container on server")
 
 		err = server.pullContainer(imageTag)
