@@ -21,6 +21,8 @@ type Config struct {
 	Server   string
 	Platform string
 	Volumes  []string
+	Hostname string
+	Web      bool
 }
 
 func loadConfig() (*Config, error) {
@@ -29,6 +31,7 @@ func loadConfig() (*Config, error) {
 	viper.AddConfigPath(".")
 
 	viper.SetDefault("platform", "linux/amd64")
+	viper.SetDefault("web", false)
 
 	err := viper.ReadInConfig()
 	if err != nil {
