@@ -9,31 +9,15 @@ entryPoints:
   websecure:
     address: ":443"
 
-api:
-  dashboard: true
-
 certificatesResolvers:
-  theresolver:
+  myresolver:
     acme:
-      email: "%s" # config.CertEmail
-      storage: "acme.json"
+      email: your-email@example.com
+      storage: acme.json
       httpChallenge:
-        entryPoint: "web"
+        entryPoint: web
 
-http:
-  routers:
-    dashboard:
-      rule: "Host('%s')" # config.DashboardHostname
-      service: "api@internal"
-      entryPoints:
-        - "websecure"
-      tls:
-        certResolver: "theresolver"
-      middlewares:
-        - "auth"
-  middlewares:
-    auth:
-      basicAuth:
-        users:
-		# config.DashboardUsers will be appended here
+providers:
+  docker:
+    exposedByDefault: false
 `
