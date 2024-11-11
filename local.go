@@ -31,7 +31,7 @@ func runLocalCommand(command string, args ...string) (string, string, error) {
 func BuildAndPushContainer(imageName string, tag string, platform string) error {
 	fmt.Println("building container")
 
-	_, _, err := runLocalCommand("docker", "build", "--platform", platform, "-t", imageName, ".")
+	_, _, err := runLocalCommand("docker", "build", "--progress=plain", "--platform", platform, "-t", imageName, ".")
 	if err != nil {
 		return err
 	}
