@@ -104,7 +104,7 @@ func main() {
 			panic(err)
 		}
 
-		err = server.runContainer(c.Name, imageTag, c.Volumes)
+		err = server.runContainer(c.Name, imageTag, c.Volumes, c.Web, c.Hostname)
 		if err != nil {
 			panic(err)
 		}
