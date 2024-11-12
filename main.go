@@ -22,12 +22,13 @@ func main() {
 	deployFlag := flag.Bool("deploy", false, "build and deploy the container")
 	logsFlag := flag.Bool("logs", false, "get logs from the running container")
 	initFlag := flag.Bool("init", false, "initialize lord config in current directory")
-	serverFlag := flag.Bool("server", false, "only runs/checks the server setup")
+	serverFlag := flag.Bool("server", false, "only runs/checks the server setup, will setup the proxy as well")
 	destroyFLag := flag.Bool("destroy", false, "stop and delete a running container")
 	statusFlag := flag.Bool("status", false, "get the status of a running container")
 	helpFlag := flag.Bool("help", false, "get help with commands")
 	versionFlag := flag.Bool("version", false, "get lord version")
 	recoverFlag := flag.Bool("recover", false, "attempt to recover a server that has a bad install")
+	proxyFlag := flag.Bool("proxy", false, "only runs/checks the proxy setup")
 
 	flag.Parse()
 
@@ -69,7 +70,6 @@ func main() {
 
 	server := remote{c.Server}
 
-	// server setup is run for both the server and deploy flags
 	if *serverFlag || *deployFlag || *recoverFlag {
 		fmt.Println("checking server state")
 
@@ -83,6 +83,9 @@ func main() {
 			panic(err)
 		}
 
+	}
+
+	if *serverFlag || *deployFlag || *recoverFlag || *proxyFlag {
 		err = server.ensureTraefikSetup(c.Email)
 		if err != nil {
 			panic(err)
@@ -130,7 +133,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-	} else {
+	} else if !*serverFlag && !*recoverFlag && !*proxyFlag {
 		panic(fmt.Errorf("not a valid command"))
 	}
 }

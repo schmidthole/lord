@@ -23,12 +23,6 @@ func (r *remote) ensureDockerInstalled(authFile string, recover bool) error {
 			}
 		}
 
-		fmt.Println("reading docker auth file")
-		authContents, err := os.ReadFile(authFile)
-		if err != nil {
-			return err
-		}
-
 		fmt.Println("installing docker on server")
 
 		cmds := []string{
@@ -47,8 +41,6 @@ func (r *remote) ensureDockerInstalled(authFile string, recover bool) error {
 			"systemctl enable docker",
 			"systemctl restart docker",
 			"mkdir -p /root/.docker/",
-			"touch /root/.docker/config.json",
-			fmt.Sprintf("echo \"%s\" | tee /root/.docker/config.json > /dev/null", string(authContents)),
 		}
 
 		for _, cmd := range cmds {
@@ -56,6 +48,13 @@ func (r *remote) ensureDockerInstalled(authFile string, recover bool) error {
 			if err != nil {
 				return err
 			}
+		}
+
+		fmt.Println("copying docker auth file")
+
+		err := sftpCopyFile(client, authFile, "/root/.docker/config.json")
+		if err != nil {
+			return err
 		}
 
 		return nil
@@ -127,12 +126,12 @@ func (r *remote) runContainer(name string, imageTag string, volumes []string, we
 		}
 
 		if web {
-			runCommand += "--label \"traefik.enable=true\""
-			runCommand += fmt.Sprintf("--label \"traefik.http.routers.my-service.rule=Host(`%s`)\"", hostname)
-			runCommand += "--label \"traefik.http.routers.my-service.entryPoints=websecure\""
-			runCommand += "--label \"traefik.http.routers.my-service.tls.certresolver=theresolver\""
-			runCommand += "--label \"traefik.http.services.my-service.loadbalancer.server.port=80\""
-			runCommand += "--network traefik"
+			runCommand += " --label \"traefik.enable=true\""
+			runCommand += fmt.Sprintf(" --label \"traefik.http.routers.my-service.rule=Host(\\`%s\\`)\"", hostname)
+			runCommand += " --label \"traefik.http.routers.my-service.entryPoints=websecure\""
+			runCommand += " --label \"traefik.http.routers.my-service.tls.certresolver=theresolver\""
+			runCommand += " --label \"traefik.http.services.my-service.loadbalancer.server.port=80\""
+			runCommand += " --network traefik"
 		}
 
 		runCommand += fmt.Sprintf(" %s", imageTag)

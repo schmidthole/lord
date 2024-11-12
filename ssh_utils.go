@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
+	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -95,4 +97,31 @@ func runSSHCommand(client *ssh.Client, cmd string) (string, string, error) {
 	fmt.Println(stdoutBuf.String())
 
 	return stdoutBuf.String(), stderrBuf.String(), nil
+}
+
+func sftpCopyFile(client *ssh.Client, srcFilePath string, dstFilePath string) error {
+	sftpClient, err := sftp.NewClient(client)
+	if err != nil {
+		return err
+	}
+	defer sftpClient.Close()
+
+	srcFile, err := os.Open(srcFilePath)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	dstFile, err := sftpClient.Create(dstFilePath)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
