@@ -86,9 +86,12 @@ func main() {
 	}
 
 	if *serverFlag || *deployFlag || *recoverFlag || *proxyFlag {
-		err = server.ensureTraefikSetup(c.Email)
-		if err != nil {
-			panic(err)
+		// only check traefik if we are deploying a web container
+		if c.Web {
+			err = server.ensureTraefikSetup(c.Email)
+			if err != nil {
+				panic(err)
+			}
 		}
 	}
 
