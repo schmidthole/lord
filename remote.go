@@ -127,10 +127,10 @@ func (r *remote) runContainer(name string, imageTag string, volumes []string, we
 
 		if web {
 			runCommand += " --label \"traefik.enable=true\""
-			runCommand += fmt.Sprintf(" --label \"traefik.http.routers.my-service.rule=Host(\\`%s\\`)\"", hostname)
-			runCommand += " --label \"traefik.http.routers.my-service.entryPoints=websecure\""
-			runCommand += " --label \"traefik.http.routers.my-service.tls.certresolver=theresolver\""
-			runCommand += " --label \"traefik.http.services.my-service.loadbalancer.server.port=80\""
+			runCommand += fmt.Sprintf(" --label \"traefik.http.routers.%s.rule=Host(\\`%s\\`)\"", name, hostname)
+			runCommand += fmt.Sprintf(" --label \"traefik.http.routers.%s.entryPoints=websecure\"", name)
+			runCommand += fmt.Sprintf(" --label \"traefik.http.routers.%s.tls.certresolver=theresolver\"", name)
+			runCommand += fmt.Sprintf(" --label \"traefik.http.services.%s.loadbalancer.server.port=80\"", name)
 			runCommand += " --network traefik"
 		}
 
