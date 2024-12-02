@@ -78,3 +78,13 @@ func displayHelp() {
 func displayVerison() {
 	fmt.Printf("\n version: %s\n\n\n", version)
 }
+
+func initLocalLogDirectory() error {
+	_, err := os.Stat("lord-logs")
+	if os.IsNotExist(err) {
+		fmt.Println("creating lord-logs directory")
+		err = os.Mkdir("./lord-logs", 0755)
+	}
+
+	return err
+}

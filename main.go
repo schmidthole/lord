@@ -14,7 +14,7 @@ var banner = `
                                            
 `
 
-var version = "1"
+var version = "2"
 
 func main() {
 	fmt.Println(banner)
@@ -29,6 +29,7 @@ func main() {
 	versionFlag := flag.Bool("version", false, "get lord version")
 	recoverFlag := flag.Bool("recover", false, "attempt to recover a server that has a bad install")
 	proxyFlag := flag.Bool("proxy", false, "only runs/checks the proxy setup")
+	logDownloadFlag := flag.Bool("logdownload", false, "download log file from the server")
 
 	flag.Parse()
 
@@ -133,6 +134,16 @@ func main() {
 		}
 	} else if *statusFlag {
 		err = server.getContainerStatus(c.Name)
+		if err != nil {
+			panic(err)
+		}
+	} else if *logDownloadFlag {
+		initLocalLogDirectory()
+		if err != nil {
+			panic(err)
+		}
+
+		err = server.downloadContainerLogs(c.Name)
 		if err != nil {
 			panic(err)
 		}

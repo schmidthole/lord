@@ -5,7 +5,9 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -52,7 +54,7 @@ func (r *remote) ensureDockerInstalled(authFile string, recover bool) error {
 
 		fmt.Println("copying docker auth file")
 
-		err := sftpCopyFile(client, authFile, "/root/.docker/config.json")
+		err := sftpCopyFileToRemote(client, authFile, "/root/.docker/config.json")
 		if err != nil {
 			return err
 		}
@@ -202,5 +204,25 @@ func (r *remote) streamContainerLogs(name string) error {
 		fmt.Println("end log stream")
 
 		return nil
+	})
+}
+
+func (r *remote) downloadContainerLogs(name string) error {
+	return withSSHClient(r.address, func(client *ssh.Client) error {
+		fmt.Println("downloading container log file")
+
+		id, _, err := runSSHCommand(client, fmt.Sprintf("docker inspect --format='{{.Id}}' %s", name))
+		if err != nil {
+			return err
+		}
+
+		id = strings.TrimSpace(id)
+		remoteLogPath := fmt.Sprintf("/var/lib/docker/containers/%s/local-logs/container.log", id)
+
+		localLogPath := fmt.Sprintf("./lord-logs/%s-%v.log", name, time.Now().Unix())
+
+		fmt.Printf("downloading log file from remote:%s to local:%s\n", remoteLogPath, localLogPath)
+
+		return sftpCopyFileFromRemote(client, remoteLogPath, localLogPath)
 	})
 }

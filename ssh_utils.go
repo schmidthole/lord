@@ -99,7 +99,7 @@ func runSSHCommand(client *ssh.Client, cmd string) (string, string, error) {
 	return stdoutBuf.String(), stderrBuf.String(), nil
 }
 
-func sftpCopyFile(client *ssh.Client, srcFilePath string, dstFilePath string) error {
+func sftpCopyFileToRemote(client *ssh.Client, srcFilePath string, dstFilePath string) error {
 	sftpClient, err := sftp.NewClient(client)
 	if err != nil {
 		return err
@@ -113,6 +113,33 @@ func sftpCopyFile(client *ssh.Client, srcFilePath string, dstFilePath string) er
 	defer srcFile.Close()
 
 	dstFile, err := sftpClient.Create(dstFilePath)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func sftpCopyFileFromRemote(client *ssh.Client, srcFilePath string, dstFilePath string) error {
+	sftpClient, err := sftp.NewClient(client)
+	if err != nil {
+		return err
+	}
+	defer sftpClient.Close()
+
+	srcFile, err := sftpClient.Open(srcFilePath)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(dstFilePath)
 	if err != nil {
 		return err
 	}
