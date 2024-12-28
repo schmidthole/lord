@@ -14,15 +14,16 @@ server: 0.0.0.0
 `
 
 type Config struct {
-	Name     string
-	Registry string
-	Email    string
-	AuthFile string
-	Server   string
-	Platform string
-	Volumes  []string
-	Hostname string
-	Web      bool
+	Name            string
+	Registry        string
+	Email           string
+	AuthFile        string
+	Server          string
+	Platform        string
+	Volumes         []string
+	Hostname        string
+	Web             bool
+	EnvironmentFile string
 }
 
 func loadConfig() (*Config, error) {
