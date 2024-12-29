@@ -106,6 +106,11 @@ func main() {
 
 		fmt.Println("updating and running container on server")
 
+		err = server.stageForContainer(c.Name, c.Volumes, c.EnvironmentFile)
+		if err != nil {
+			panic(err)
+		}
+
 		err = server.pullContainer(imageTag)
 		if err != nil {
 			panic(err)
@@ -116,7 +121,7 @@ func main() {
 			panic(err)
 		}
 
-		err = server.runContainer(c.Name, imageTag, c.Volumes, c.Web, c.Hostname)
+		err = server.runContainer(c.Name, imageTag, c.Volumes, c.EnvironmentFile, c.Web, c.Hostname)
 		if err != nil {
 			panic(err)
 		}

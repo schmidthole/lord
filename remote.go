@@ -115,7 +115,45 @@ func (r *remote) getContainerStatus(name string) error {
 	})
 }
 
-func (r *remote) runContainer(name string, imageTag string, volumes []string, web bool, hostname string) error {
+func (r *remote) stageForContainer(name string, volumes []string, environmentFile string) error {
+	return withSSHClient(r.address, func(client *ssh.Client) error {
+		fmt.Println("staging host for container")
+
+		cmds := []string{
+			fmt.Sprintf("mkdir -p /etc/%s", name),
+			fmt.Sprintf("mkdir -p /var/%s", name),
+		}
+
+		for _, v := range volumes {
+			vParts := strings.Split(v, ":")
+			if len(vParts) < 2 {
+				return fmt.Errorf("malformed volume mount")
+			}
+
+			cmds = append(cmds, fmt.Sprintf("mkdir -p %s", vParts[0]))
+		}
+
+		fmt.Println("creating volume mount and config directories")
+		for _, cmd := range cmds {
+			_, _, err := runSSHCommand(client, cmd)
+			if err != nil {
+				return err
+			}
+		}
+
+		if environmentFile != "" {
+			fmt.Println("copying env file")
+			err := sftpCopyFileToRemote(client, environmentFile, fmt.Sprintf("/etc/%s/%s.env", name, name))
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+func (r *remote) runContainer(name string, imageTag string, volumes []string, environmentFile string, web bool, hostname string) error {
 	return withSSHClient(r.address, func(client *ssh.Client) error {
 		fmt.Println("running container")
 
@@ -134,6 +172,10 @@ func (r *remote) runContainer(name string, imageTag string, volumes []string, we
 			runCommand += fmt.Sprintf(" --label \"traefik.http.routers.%s.tls.certresolver=theresolver\"", name)
 			runCommand += fmt.Sprintf(" --label \"traefik.http.services.%s.loadbalancer.server.port=80\"", name)
 			runCommand += " --network traefik"
+		}
+
+		if environmentFile != "" {
+			runCommand += fmt.Sprintf(" --env-file /etc/%s/%s.env", name, name)
 		}
 
 		runCommand += fmt.Sprintf(" %s", imageTag)
