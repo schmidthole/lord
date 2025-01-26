@@ -14,7 +14,7 @@ var banner = `
                                            
 `
 
-var version = "3"
+var version = "4"
 
 func main() {
 	fmt.Println(banner)
@@ -99,7 +99,7 @@ func main() {
 	if *deployFlag {
 		imageTag := fmt.Sprintf("%s/%s:latest", c.Registry, c.Name)
 
-		err = BuildAndPushContainer(c.Name, imageTag, c.Platform)
+		err = BuildAndPushContainer(c.Name, imageTag, c.Platform, c.BuildArgFile)
 		if err != nil {
 			panic(err)
 		}

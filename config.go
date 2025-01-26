@@ -24,6 +24,7 @@ type Config struct {
 	Hostname        string
 	Web             bool
 	EnvironmentFile string
+	BuildArgFile    string
 }
 
 func loadConfig() (*Config, error) {
