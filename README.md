@@ -1,94 +1,137 @@
 # Lord
 
-A very opinionated and minimalist PaaS management service. 
+A minimalist PaaS management service for deploying Docker containers to remote hosts.
 
-`lord` will build a docker container for a given project and deploy it to a linux host. 
-The goal is to have as few configuration options and dependencies as possible.
+Lord builds your Docker containers locally and deploys them to Linux servers via SSH. It focuses on simplicity with minimal configuration and zero dependencies on the target server beyond Docker.
 
-`lord` doesn't care what is running on the host outside of the details specified for the current
-project and configuration, 
+## Quick Start
 
-**In order for lord to function it needs:**
+Lord requires three things to get started:
 
-1. A `Dockerfile` in the current directory to build.
-2. A registry to push and pull docker images from.
-   * You must be logged into your registry locally. `lord` will not do this for you.
-   * Part of the configuration of `lord` requires that you provide a `config.json` file with at least read-only auth credentials to your registry. This will be placed on the server.
-3. A `lord.yml` file in the current directory alongside the `Dockerfile`
+1. A `Dockerfile` in your project directory
+2. A container registry (you must be logged in locally)
+3. A `lord.yml` configuration file
 
-## Container Requirements
+Get started by running `lord -init` in your project directory to generate a configuration template.
 
-To keep things ultra simple, lord requires the following from any containers deployed:
+## How It Works
 
-* If the container hosts a web service, it must expose this on its internal port `80`.
-* Lord provides a volume mount internal to the container at `/data`. If the container needs to store any persistent data. The `Dockerfile` will need to declare this as well.
-* Additional volumes can be specified in the `lord.yml`, these will also need to be exposed in the `Dockerfile`.
+1. **Build**: Lord builds your Docker container locally with the specified platform
+2. **Push**: Container is pushed to your configured registry
+3. **Deploy**: Lord SSHs to your server and pulls/runs the container
+4. **Proxy**: Web services are automatically configured with Traefik reverse proxy for https
 
-## Usage
+### Container Conventions
 
-*Assuming the `lord` binary is in your `$PATH`*
+- Web services must expose port 80 internally
+- Persistent data should use the `/data` volume mount
+- Additional volumes can be specified in configuration
 
-Run `lord -init` to create a base `lord.yml` config file in your current directory.
+## Commands
 
-Run `lord -deploy` and the following will happen:
+```sh
+lord -init         # create lord.yml configuration file
+lord -deploy       # build and deploy your application
+lord -logs         # stream container logs from server
+lord -destroy      # remove deployed containers
+lord -status       # check deployment status
+lord -server       # only run and/or check the server setup (includes reverse proxy)
+lord -proxy        # only run and/or check the reverse proxy setup
+lord -recover      # attempt to recover a server that has a bad install/setup of lord dependencies
+lord -logdownload  # download a full log file from the server
+```
 
-1. Your docker container described by the `Dockerfile` in your current directory will be built.
-2. The container will be pushed to the specified registry.
-3. `lord` will use ssh to:
-  1. Ensure docker is running and installed on the specified server.
-  2. Ensure your server is logged into the specified registry.
-  3. Pull the container from the registry onto the server.
-  4. Run the container on the server using the specified options.
+## Configuration
 
-Run `lord -logs` to stream container logs from your server.
-
-Run `lord -destroy` to remove any running containers from your server associated with the config in the
-current directory.
-
-## Lord Config File Format
-
-Your project's `lord.yml` should look like this:
+Create a `lord.yml` file in your project directory:
 
 ```yaml
-# image name. this will appear in the container names and tags
-name: test
+# required fields
+name: myapp                           # unique app name per host
+registry: my.realregistry.com/me      # container registry url
+authfile: ./config.json               # docker registry auth file
+server: 192.168.1.100                 # target server ip address
 
-# container registry
-registry: my.real.registry.com/me
+# optional fields
+email: user@example.com               # email for tls certificates
+platform: linux/amd64                 # build platform (default: linux/amd64)
+target: production                    # docker build target stage
+web: true                             # enable web service with traefik
+hostname: myapp.example.com           # domain name (required if web: true)
+environmentfile: .env                 # environment variables file
+buildargfile: build.args              # docker build arguments file
 
-# email for tls certs (optional, will default to dummy value if not present)
-email: theuser@example.com
-
-# docker auth file to place on the server
-authfile: path/to/config.json
-
-# the server to deploy to. lord will use the root user and ssh key authentication by default
-server: 161.35.141.177
-
-# an optional builder platform for the docker container. this will default to linux/amd64
-platform: linux/amd64
-
-# optional volumes to mount in addition to the default. these follow the standard docker cli format for volumes.
+# additional volume mounts (follows docker format)
 volumes:
-    - /etc/app:/config
+  - /host/data:/container/data
+  - /etc/config:/app/config
+```
+
+### Supporting Multiple Applications/Containers
+
+Lord supports multiple `lord.yml` files in a single repository in cases where:
+
+- There are multiple containers/variants that can be built from a single Dockerfile (i.e. `--target`)
+- There are multiple remote hosts that the container is deployed to
+
+To achieve this, each separate Lord config file can be prefixed with a unique config key using dot notation.
+
+For example, using the following file naming:
+
+```
+project dir ─┐
+             ├─── Dockerfile
+             ├─── conf1.lord.yml
+             └─── conf2.lord.yml
+```
+The following Lord config variants can be used:
+
+- `conf1`
+- `conf2`
+
+To perform actions against each, the `-config` flag can be included in the Lord command along with the config key:
+
+``` sh
+lord -config conf2 -deploy
+```
+
+### Required Registry Setup
+
+You must provide a `config.json` file with registry authentication. This file will be copied to your server to enable container pulls:
+
+```json
+{
+  "auths": {
+    "my.realregistry.com": {
+      "auth": "base64encodedcredentials"
+    }
+  }
+}
 ```
 
 ## Installation
 
-1. Install Go
-2. Clone this repo and run:
+### From Source
 
-```sh
-make build
-```
+1. Install Go 1.19+
+2. Clone this repository:
+   ```sh
+   git clone https://github.com/yourusername/lord.git
+   cd lord
+   ```
+3. Build and install:
+   ```sh
+   make build        # builds ./lord binary
+   make install      # installs to /usr/local/bin (requires sudo)
+   ```
 
-3. Put the `lord` binary somewhere in your `$PATH`, or run:
+### Prerequisites
 
-``` sh
-make install
-```
+- Docker installed locally for building containers
+- SSH key access to your target deployment servers
+- Access to a container registry (Docker Hub, GitHub Container Registry, etc.)
 
-to put it in `/usr/local/bin` (requires sudo).
+## License
 
-*Better install script/instructions to come in the future.*
+MIT License - see LICENSE file for details.
 
