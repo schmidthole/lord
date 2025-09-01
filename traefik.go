@@ -51,6 +51,9 @@ func (r *remote) ensureTraefikSetup(email string) error {
 		if !strings.Contains(stdOut, "traefik") {
 			_, _, err = runSSHCommand(client, "docker network create traefik")
 		}
+		if err != nil {
+			return err
+		}
 
 		fmt.Println("setting up traefik on server")
 
