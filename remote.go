@@ -157,7 +157,7 @@ func (r *remote) runContainer(name string, imageTag string, volumes []string, en
 	return withSSHClient(r.address, func(client *ssh.Client) error {
 		fmt.Println("running container")
 
-		runCommand := "docker run -d --restart unless-stopped --log-opt max-size=10m --log-opt max-file=3"
+		runCommand := "docker run -d --restart unless-stopped"
 		runCommand += fmt.Sprintf(" --name %s", name)
 		runCommand += fmt.Sprintf(" -v /var/%s:/data", name)
 

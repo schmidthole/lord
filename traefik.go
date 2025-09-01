@@ -60,7 +60,7 @@ func (r *remote) ensureTraefikSetup(email string) error {
 			"touch /etc/traefik/acme.json",
 			"chmod 600 /etc/traefik/acme.json",
 			"docker rm --force traefik",
-			"docker run -d --restart unless-stopped --log-opt max-size=10m --log-opt max-file=3 --name traefik -v /var/run/docker.sock:/var/run/docker.sock -v /etc/traefik/traefik.yml:/etc/traefik/traefik.yml -v /etc/traefik/acme.json:/acme.json -p 80:80 -p 443:443 --network traefik traefik:latest",
+			"docker run -d --restart unless-stopped --name traefik -v /var/run/docker.sock:/var/run/docker.sock -v /etc/traefik/traefik.yml:/etc/traefik/traefik.yml -v /etc/traefik/acme.json:/acme.json -p 80:80 -p 443:443 --network traefik traefik:latest",
 		}
 
 		for _, cmd := range cmds {
