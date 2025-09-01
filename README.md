@@ -1,18 +1,19 @@
 # Lord
 
-This is a very opinionated an minimalist PaaS management service. `lord` will build a docker
-container for a given project and deploy it to a linux host. The goal is to have as few
-configuration options and dependencies as possible.
+A very opinionated and minimalist PaaS management service. 
+
+`lord` will build a docker container for a given project and deploy it to a linux host. 
+The goal is to have as few configuration options and dependencies as possible.
 
 `lord` doesn't care what is running on the host outside of the details specified for the current
-project. This means a bunch of stuff can be running already.
+project and configuration, 
 
 **In order for lord to function it needs:**
 
 1. A `Dockerfile` in the current directory to build.
 2. A registry to push and pull docker images from.
    * You must be logged into your registry locally. `lord` will not do this for you.
-   * Part of the configuration of `lord` requires that you provide a `config.json` file with "at least" read-only auth credentials to your registry. This will be placed on the server.
+   * Part of the configuration of `lord` requires that you provide a `config.json` file with at least read-only auth credentials to your registry. This will be placed on the server.
 3. A `lord.yml` file in the current directory alongside the `Dockerfile`
 
 ## Container Requirements
@@ -43,7 +44,6 @@ Run `lord -logs` to stream container logs from your server.
 
 Run `lord -destroy` to remove any running containers from your server associated with the config in the
 current directory.
-
 
 ## Lord Config File Format
 
@@ -92,7 +92,3 @@ to put it in `/usr/local/bin` (requires sudo).
 
 *Better install script/instructions to come in the future.*
 
-## Roadmap
-
-* [ ] Auto configuration of a reverse proxy with ssl certs.
-* [x] Log streaming/viewing.
