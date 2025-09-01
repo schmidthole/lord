@@ -37,7 +37,7 @@ func runLocalCommand(fullCommand string) (string, string, error) {
 	return stdoutBuf.String(), stderrBuf.String(), err
 }
 
-func BuildAndPushContainer(imageName string, tag string, platform string, buildArgFile string) error {
+func BuildAndPushContainer(imageName string, tag string, platform string, buildArgFile string, target string) error {
 	fmt.Println("building container")
 
 	buildCmd := fmt.Sprintf("docker build --progress=plain --platform %s -t %s", platform, imageName)
@@ -50,6 +50,9 @@ func BuildAndPushContainer(imageName string, tag string, platform string, buildA
 		for key, value := range args {
 			buildCmd += fmt.Sprintf(" --build-arg %s=%s", key, value)
 		}
+	}
+	if target != "" {
+		buildCmd += fmt.Sprintf("--target %s", target)
 	}
 	buildCmd += " ."
 

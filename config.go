@@ -15,6 +15,7 @@ server: 0.0.0.0
 
 type Config struct {
 	Name            string
+	Target          string
 	Registry        string
 	Email           string
 	AuthFile        string
@@ -27,13 +28,20 @@ type Config struct {
 	BuildArgFile    string
 }
 
-func loadConfig() (*Config, error) {
-	viper.SetConfigName("lord")
+func loadConfig(configKey string) (*Config, error) {
+	configName := "lord"
+	if configKey != "" {
+		configName = fmt.Sprintf("%s.lord", configKey)
+	}
+
+	viper.SetConfigName(configName)
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
 
+	viper.SetDefault("target", "")
 	viper.SetDefault("platform", "linux/amd64")
 	viper.SetDefault("web", false)
+	viper.SetDefault("email", "admin@localshot")
 
 	err := viper.ReadInConfig()
 	if err != nil {

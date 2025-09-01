@@ -14,11 +14,12 @@ var banner = `
                                            
 `
 
-var version = "5"
+var version = "6"
 
 func main() {
 	fmt.Println(banner)
 
+	configFlag := flag.String("config", "", "specify a lord config key to use (i.e. set to \"beta\" to pickup the beta.lord.yml file)")
 	deployFlag := flag.Bool("deploy", false, "build and deploy the container")
 	logsFlag := flag.Bool("logs", false, "get logs from the running container")
 	initFlag := flag.Bool("init", false, "initialize lord config in current directory")
@@ -64,7 +65,7 @@ func main() {
 		return
 	}
 
-	c, err := loadConfig()
+	c, err := loadConfig(*configFlag)
 	if err != nil {
 		panic(err)
 	}
@@ -99,7 +100,7 @@ func main() {
 	if *deployFlag {
 		imageTag := fmt.Sprintf("%s/%s:latest", c.Registry, c.Name)
 
-		err = BuildAndPushContainer(c.Name, imageTag, c.Platform, c.BuildArgFile)
+		err = BuildAndPushContainer(c.Name, imageTag, c.Platform, c.BuildArgFile, c.Target)
 		if err != nil {
 			panic(err)
 		}

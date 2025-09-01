@@ -56,7 +56,7 @@ name: test
 # container registry
 registry: my.real.registry.com/me
 
-# email for tls certs
+# email for tls certs (optional, will default to dummy value if not present)
 email: theuser@example.com
 
 # docker auth file to place on the server
