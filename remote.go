@@ -265,3 +265,30 @@ func (r *remote) downloadContainerLogs(name string) error {
 		return os.WriteFile(localLogPath, []byte(logs), 0644)
 	})
 }
+
+func (r *remote) downloadContainerVolume(containerVolume string, name string, volumes []string) error {
+	allVolumes := append(volumes, fmt.Sprintf("/var/%s:/data", name))
+	hostVolume := ""
+
+	for _, volume := range allVolumes {
+		vParts := strings.Split(volume, ":")
+
+		if len(vParts) < 2 {
+			return fmt.Errorf("malformed volume in config, cannot download: %s", volume)
+		}
+
+		if containerVolume == vParts[1] {
+			hostVolume = vParts[0]
+			break
+		}
+	}
+
+	if hostVolume == "" {
+		return fmt.Errorf("specified volume not found: %s", containerVolume)
+	}
+
+	return withSSHClient(r.address, func(client *ssh.Client) error {
+		localPath := fmt.Sprintf("./volumes/%s", strings.ReplaceAll(containerVolume, "/", "_"))
+		return rsyncCopyDirectoryFromRemote(client, hostVolume, localPath)
+	})
+}
