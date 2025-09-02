@@ -253,18 +253,15 @@ func (r *remote) downloadContainerLogs(name string) error {
 	return withSSHClient(r.address, func(client *ssh.Client) error {
 		fmt.Println("downloading container log file")
 
-		id, _, err := runSSHCommand(client, fmt.Sprintf("docker inspect --format='{{.Id}}' %s", name))
+		localLogPath := fmt.Sprintf("./lord-logs/%s-%v.log", name, time.Now().Unix())
+
+		fmt.Printf("downloading logs for container %s to %s\n", name, localLogPath)
+
+		logs, _, err := runSSHCommand(client, fmt.Sprintf("docker logs %s", name))
 		if err != nil {
 			return err
 		}
 
-		id = strings.TrimSpace(id)
-		remoteLogPath := fmt.Sprintf("/var/lib/docker/containers/%s/local-logs/container.log", id)
-
-		localLogPath := fmt.Sprintf("./lord-logs/%s-%v.log", name, time.Now().Unix())
-
-		fmt.Printf("downloading log file from remote:%s to local:%s\n", remoteLogPath, localLogPath)
-
-		return sftpCopyFileFromRemote(client, remoteLogPath, localLogPath)
+		return os.WriteFile(localLogPath, []byte(logs), 0644)
 	})
 }
