@@ -52,7 +52,7 @@ func BuildAndPushContainer(imageName string, tag string, platform string, buildA
 		}
 	}
 	if target != "" {
-		buildCmd += fmt.Sprintf("--target %s", target)
+		buildCmd += fmt.Sprintf(" --target %s", target)
 	}
 	buildCmd += " ."
 
