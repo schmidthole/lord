@@ -131,7 +131,19 @@ You must provide a `config.json` file with registry authentication. This file wi
 - SSH key access to your target deployment servers
 - Access to a container registry (Docker Hub, GitHub Container Registry, etc.)
 
+### Supported Linux Distributions
+
+Lord automatically installs Docker on target servers and supports the following Linux distributions:
+
+- **Ubuntu** - Uses apt package manager with Docker's official repository
+- **Debian** - Uses apt package manager with Docker's official repository  
+- **Amazon Linux 2023** - Uses dnf package manager with Amazon's default repositories
+- **CentOS** - Uses yum package manager with Docker's official repository
+- **Red Hat Enterprise Linux (RHEL)** - Uses yum package manager with Docker's official repository
+
+Lord automatically detects the host operating system and uses the appropriate package manager and repositories for Docker installation.
+
 ## License
 
-MIT License - see LICENSE file for details.
+BSD 3-Clause License - see LICENSE file for details.
 
