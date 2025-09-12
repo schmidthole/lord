@@ -11,36 +11,36 @@ import (
 )
 
 type SystemStats struct {
-	Timestamp string      `json:"timestamp"`
-	CPU       CPUStats    `json:"cpu"`
-	Memory    MemoryStats `json:"memory"`
-	Storage   StorageStats `json:"storage"`
+	Timestamp string        `json:"timestamp"`
+	CPU       CPUStats      `json:"cpu"`
+	Memory    MemoryStats   `json:"memory"`
+	Storage   StorageStats  `json:"storage"`
 	Network   *NetworkStats `json:"network,omitempty"`
 	Docker    *DockerStats  `json:"docker,omitempty"`
 }
 
 type CPUStats struct {
-	Cores       int     `json:"cores"`
-	Load1Min    float64 `json:"load_1min"`
+	Cores        int     `json:"cores"`
+	Load1Min     float64 `json:"load_1min"`
 	UsagePercent float64 `json:"usage_percent"`
 }
 
 type MemoryStats struct {
-	TotalGB     float64 `json:"total_gb"`
-	UsedGB      float64 `json:"used_gb"`
-	AvailableGB float64 `json:"available_gb"`
+	TotalGB      float64 `json:"total_gb"`
+	UsedGB       float64 `json:"used_gb"`
+	AvailableGB  float64 `json:"available_gb"`
 	UsagePercent float64 `json:"usage_percent"`
 }
 
 type StorageStats struct {
-	TotalGB     float64 `json:"total_gb"`
-	UsedGB      float64 `json:"used_gb"`
-	AvailableGB float64 `json:"available_gb"`
+	TotalGB      float64 `json:"total_gb"`
+	UsedGB       float64 `json:"used_gb"`
+	AvailableGB  float64 `json:"available_gb"`
 	UsagePercent float64 `json:"usage_percent"`
 }
 
 type NetworkStats struct {
-	Interface string  `json:"interface"`
+	Interface  string  `json:"interface"`
 	RxKBPerSec float64 `json:"rx_kb_per_sec"`
 	TxKBPerSec float64 `json:"tx_kb_per_sec"`
 }
@@ -124,7 +124,7 @@ func getCPUStats(client *ssh.Client, cpu *CPUStats) error {
 	if len(parts) < 2 {
 		return fmt.Errorf("failed to parse load average")
 	}
-	
+
 	loadParts := strings.Split(strings.TrimSpace(parts[1]), ",")
 	if len(loadParts) < 1 {
 		return fmt.Errorf("failed to parse load average")
