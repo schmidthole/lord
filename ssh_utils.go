@@ -125,36 +125,3 @@ func sftpCopyFileToRemote(client *ssh.Client, srcFilePath string, dstFilePath st
 
 	return nil
 }
-
-func rsyncCopyDirectoryFromRemote(client *ssh.Client, srcDirPath string, dstDirPath string) error {
-	// ensure local destination directory exists
-	err := os.MkdirAll(dstDirPath, 0755)
-	if err != nil {
-		return err
-	}
-
-	// use rsync over ssh to copy directory
-	rsyncCmd := fmt.Sprintf("rsync -avz %s/ %s/", srcDirPath, dstDirPath)
-
-	session, err := client.NewSession()
-	if err != nil {
-		return err
-	}
-	defer session.Close()
-
-	fmt.Printf("> %s\n", rsyncCmd)
-
-	var stdoutBuf, stderrBuf bytes.Buffer
-	session.Stdout = &stdoutBuf
-	session.Stderr = &stderrBuf
-
-	err = session.Run(rsyncCmd)
-	if err != nil {
-		fmt.Println(stderrBuf.String())
-		return fmt.Errorf("rsync failed: %v", err)
-	}
-
-	fmt.Println(stdoutBuf.String())
-
-	return nil
-}

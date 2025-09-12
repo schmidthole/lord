@@ -143,6 +143,18 @@ Lord automatically installs Docker on target servers and supports the following 
 
 Lord automatically detects the host operating system and uses the appropriate package manager and repositories for Docker installation.
 
+## Why Not Use Docker Compose?
+
+Lord takes a different approach from Docker Compose by focusing on unrelated single-container deployments across multiple remote servers. While Docker Compose excels at orchestrating multi-container applications on a single host, Lord is designed for:
+
+- **Simple single-container applications** that don't need complex service orchestration
+- **Multi-server deployments** where the same container runs across different hosts
+- **Minimal server dependencies** - only Docker is required on the target server
+- **Built-in reverse proxy** with automatic TLS certificate management via Traefik
+- **Registry-based deployments** where containers are built locally and pushed to registries
+
+Docker Compose requires configuration files on each server and is better suited for applications with multiple interconnected services. Lord eliminates server-side configuration complexity by managing everything through SSH from your local machine.
+
 ## License
 
 BSD 3-Clause License - see LICENSE file for details.

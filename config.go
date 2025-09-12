@@ -9,7 +9,6 @@ import (
 var baseConfig = `name: myapp
 registry: my.realregistry.com/me
 email: user
-authfile: ./config.json
 server: 0.0.0.0
 `
 
@@ -26,7 +25,7 @@ type Config struct {
 	// email to use for tls certificate notifications. set to a dummy value if not supplied (optional)
 	Email string
 
-	// auth config.json for registry, will be copied to remote host. must be the same for all containers on a single host (required)
+	// auth config.json for registry, will be copied to remote host if provided. must be the same for all containers on a single host (optional)
 	AuthFile string
 
 	// ip address of remote host server. the deployment machine must have ssh access (required)

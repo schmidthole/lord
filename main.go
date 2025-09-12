@@ -31,7 +31,6 @@ func main() {
 	recoverFlag := flag.Bool("recover", false, "attempt to recover a server that has a bad install")
 	proxyFlag := flag.Bool("proxy", false, "only runs/checks the proxy setup")
 	logDownloadFlag := flag.Bool("logdownload", false, "download log file from the server")
-	volumeDownloadFlag := flag.String("volumedownload", "", "download the contents of one of the container's volumes")
 	monitorFlag := flag.Bool("monitor", false, "get system stats from the server")
 
 	flag.Parse()
@@ -152,11 +151,6 @@ func main() {
 		}
 
 		err = server.downloadContainerLogs(c.Name)
-		if err != nil {
-			panic(err)
-		}
-	} else if *volumeDownloadFlag != "" {
-		err = server.downloadContainerVolume(*volumeDownloadFlag, c.Name, c.Volumes)
 		if err != nil {
 			panic(err)
 		}
