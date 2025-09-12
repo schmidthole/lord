@@ -16,18 +16,53 @@ type remote struct {
 	address string
 }
 
-func (r *remote) ensureDockerInstalled(authFile string, recover bool) error {
-	return withSSHClient(r.address, func(client *ssh.Client) error {
-		if !recover {
-			_, _, err := runSSHCommand(client, "docker --version")
-			if err == nil {
-				return nil
-			}
+func (r *remote) getHostOS() (string, error) {
+	var osType string
+	var osErr error
+
+	err := withSSHClient(r.address, func(client *ssh.Client) error {
+		// try to identify the distro using /etc/os-release
+		osRelease, _, err := runSSHCommand(client, "cat /etc/os-release | grep ^ID= | cut -d'=' -f2 | tr -d '\"'")
+		if err == nil && osRelease != "" {
+			osType = strings.TrimSpace(osRelease)
+			return nil
 		}
 
-		fmt.Println("installing docker on server")
+		// fallback to checking for specific files
+		_, _, err = runSSHCommand(client, "test -f /etc/amazon-linux-release")
+		if err == nil {
+			osType = "amzn"
+			return nil
+		}
 
-		cmds := []string{
+		_, _, err = runSSHCommand(client, "test -f /etc/debian_version")
+		if err == nil {
+			osType = "debian"
+			return nil
+		}
+
+		_, _, err = runSSHCommand(client, "test -f /etc/redhat-release")
+		if err == nil {
+			osType = "rhel"
+			return nil
+		}
+
+		osType = "unknown"
+		osErr = fmt.Errorf("unable to determine host os")
+		return nil
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return osType, osErr
+}
+
+func (r *remote) getDockerInstallCommands(osType string) ([]string, error) {
+	switch osType {
+	case "ubuntu", "debian":
+		return []string{
 			"apt-get update",
 			"apt-get upgrade -y",
 			"for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove -y $pkg; done",
@@ -43,6 +78,57 @@ func (r *remote) ensureDockerInstalled(authFile string, recover bool) error {
 			"systemctl enable docker",
 			"systemctl restart docker",
 			"mkdir -p /root/.docker/",
+		}, nil
+	case "amzn":
+		return []string{
+			"dnf update -y",
+			"dnf remove -y docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine",
+			"dnf install -y docker",
+			"echo \"{\\\"log-driver\\\": \\\"local\\\"}\" | tee /etc/docker/daemon.json > /dev/null",
+			"systemctl enable docker",
+			"systemctl restart docker",
+			"mkdir -p /root/.docker/",
+		}, nil
+	case "rhel", "centos":
+		return []string{
+			"yum update -y",
+			"yum remove -y docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine",
+			"yum install -y yum-utils device-mapper-persistent-data lvm2",
+			"yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo",
+			"yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
+			"echo \"{\\\"log-driver\\\": \\\"local\\\"}\" | tee /etc/docker/daemon.json > /dev/null",
+			"systemctl enable docker",
+			"systemctl restart docker",
+			"mkdir -p /root/.docker/",
+		}, nil
+	default:
+		return nil, fmt.Errorf("unsupported os type: %s", osType)
+	}
+}
+
+func (r *remote) ensureDockerInstalled(authFile string, recover bool) error {
+	return withSSHClient(r.address, func(client *ssh.Client) error {
+		if !recover {
+			_, _, err := runSSHCommand(client, "docker --version")
+			if err == nil {
+				return nil
+			}
+		}
+
+		fmt.Println("installing docker on server")
+
+		// detect host os
+		osType, err := r.getHostOS()
+		if err != nil {
+			return fmt.Errorf("failed to detect host os: %v", err)
+		}
+
+		fmt.Printf("detected host os: %s\n", osType)
+
+		// get the appropriate commands for this os
+		cmds, err := r.getDockerInstallCommands(osType)
+		if err != nil {
+			return err
 		}
 
 		for _, cmd := range cmds {
@@ -54,7 +140,7 @@ func (r *remote) ensureDockerInstalled(authFile string, recover bool) error {
 
 		fmt.Println("copying docker auth file")
 
-		err := sftpCopyFileToRemote(client, authFile, "/root/.docker/config.json")
+		err = sftpCopyFileToRemote(client, authFile, "/root/.docker/config.json")
 		if err != nil {
 			return err
 		}
