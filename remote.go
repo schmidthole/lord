@@ -14,13 +14,14 @@ import (
 
 type remote struct {
 	address string
+	config  *Config
 }
 
 func (r *remote) getHostOS() (string, error) {
 	var osType string
 	var osErr error
 
-	err := withSSHClient(r.address, func(client *ssh.Client) error {
+	err := withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		// try to identify the distro using /etc/os-release
 		osRelease, _, err := runSSHCommand(client, "cat /etc/os-release | grep ^ID= | cut -d'=' -f2 | tr -d '\"'")
 		if err == nil && osRelease != "" {
@@ -107,7 +108,7 @@ func (r *remote) getDockerInstallCommands(osType string) ([]string, error) {
 }
 
 func (r *remote) ensureDockerInstalled(authFile string, recover bool) error {
-	return withSSHClient(r.address, func(client *ssh.Client) error {
+	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		if !recover {
 			_, _, err := runSSHCommand(client, "docker --version")
 			if err == nil {
@@ -159,7 +160,7 @@ func (r *remote) ensureDockerInstalled(authFile string, recover bool) error {
 }
 
 func (r *remote) ensureDockerRunning() error {
-	return withSSHClient(r.address, func(client *ssh.Client) error {
+	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		_, _, err := runSSHCommand(client, "systemctl is-active --quiet docker")
 		if err == nil {
 			return nil
@@ -182,7 +183,7 @@ func (r *remote) ensureDockerRunning() error {
 }
 
 func (r *remote) pullContainer(imageTag string) error {
-	return withSSHClient(r.address, func(client *ssh.Client) error {
+	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		_, _, err := runSSHCommand(client, fmt.Sprintf("docker pull %s", imageTag))
 		if err != nil {
 			return err
@@ -193,7 +194,7 @@ func (r *remote) pullContainer(imageTag string) error {
 }
 
 func (r *remote) stopAndDeleteContainer(name string) error {
-	return withSSHClient(r.address, func(client *ssh.Client) error {
+	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		fmt.Println("stopping and deleting container if exists")
 
 		_, _, err := runSSHCommand(client, fmt.Sprintf("docker stop | true %s && docker rm --force %s", name, name))
@@ -202,7 +203,7 @@ func (r *remote) stopAndDeleteContainer(name string) error {
 }
 
 func (r *remote) getContainerStatus(name string) error {
-	return withSSHClient(r.address, func(client *ssh.Client) error {
+	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		fmt.Println("getting container status")
 
 		_, _, err := runSSHCommand(client, fmt.Sprintf("docker ps --filter name=%s", name))
@@ -211,7 +212,7 @@ func (r *remote) getContainerStatus(name string) error {
 }
 
 func (r *remote) stageForContainer(name string, volumes []string, environmentFile string) error {
-	return withSSHClient(r.address, func(client *ssh.Client) error {
+	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		fmt.Println("staging host for container")
 
 		cmds := []string{
@@ -249,7 +250,7 @@ func (r *remote) stageForContainer(name string, volumes []string, environmentFil
 }
 
 func (r *remote) runContainer(name string, imageTag string, volumes []string, environmentFile string, web bool, hostname string) error {
-	return withSSHClient(r.address, func(client *ssh.Client) error {
+	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		fmt.Println("running container")
 
 		runCommand := "docker run -d --restart unless-stopped"
@@ -285,7 +286,7 @@ func (r *remote) runContainer(name string, imageTag string, volumes []string, en
 }
 
 func (r *remote) streamContainerLogs(name string) error {
-	return withSSHClient(r.address, func(client *ssh.Client) error {
+	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		fmt.Println("streaming container logs...")
 
 		session, err := client.NewSession()
@@ -345,7 +346,7 @@ func (r *remote) streamContainerLogs(name string) error {
 }
 
 func (r *remote) downloadContainerLogs(name string) error {
-	return withSSHClient(r.address, func(client *ssh.Client) error {
+	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		fmt.Println("downloading container log file")
 
 		localLogPath := fmt.Sprintf("./lord-logs/%s-%v.log", name, time.Now().Unix())

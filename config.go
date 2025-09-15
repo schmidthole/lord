@@ -48,6 +48,9 @@ type Config struct {
 
 	// docker build argument file (optional)
 	BuildArgFile string
+
+	// private ssh key file path for server connections (optional)
+	SshKeyFile string
 }
 
 func loadConfig(configKey string) (*Config, error) {

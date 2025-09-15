@@ -51,7 +51,7 @@ type DockerStats struct {
 }
 
 func (r *remote) getSystemStats(jsonOutput bool) error {
-	return withSSHClient(r.address, func(client *ssh.Client) error {
+	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		fmt.Println("gathering system statistics")
 
 		stats := SystemStats{

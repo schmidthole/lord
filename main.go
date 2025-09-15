@@ -14,7 +14,7 @@ var banner = `
                                            
 `
 
-var version = "7"
+var version = "8"
 
 func main() {
 	fmt.Println(banner)
@@ -71,7 +71,7 @@ func main() {
 		panic(err)
 	}
 
-	server := remote{c.Server}
+	server := remote{c.Server, c}
 
 	if *serverFlag || *deployFlag || *recoverFlag {
 		fmt.Println("checking server state")

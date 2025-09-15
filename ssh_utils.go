@@ -11,8 +11,8 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func getSSHClient(server string) (*ssh.Client, error) {
-	authMethod, err := getAuthMethod()
+func getSSHClient(server string, config *Config) (*ssh.Client, error) {
+	authMethod, err := getAuthMethod(config)
 	if err != nil {
 		panic(err)
 	}
@@ -28,24 +28,29 @@ func getSSHClient(server string) (*ssh.Client, error) {
 	return ssh.Dial("tcp", fmt.Sprintf("%s:22", server), sshConfig)
 }
 
-func getAuthMethod() (ssh.AuthMethod, error) {
-	defaultKeyPaths := []string{
-		filepath.Join(os.Getenv("HOME"), ".ssh", "id_ed25519"),
-		filepath.Join(os.Getenv("HOME"), ".ssh", "id_rsa"),
-		filepath.Join(os.Getenv("HOME"), ".ssh", "id_dsa"),
-	}
+func getAuthMethod(config *Config) (ssh.AuthMethod, error) {
+	var sshKeyPath string
 
-	sshKeyPath := ""
+	if config.SshKeyFile != "" {
+		sshKeyPath = config.SshKeyFile
+	} else {
+		defaultKeyPaths := []string{
+			filepath.Join(os.Getenv("HOME"), ".ssh", "id_ed25519"),
+			filepath.Join(os.Getenv("HOME"), ".ssh", "id_rsa"),
+			filepath.Join(os.Getenv("HOME"), ".ssh", "id_dsa"),
+		}
 
-	for _, keyPath := range defaultKeyPaths {
-		_, err := os.Stat(keyPath)
-		if err == nil {
-			sshKeyPath = keyPath
+		for _, keyPath := range defaultKeyPaths {
+			_, err := os.Stat(keyPath)
+			if err == nil {
+				sshKeyPath = keyPath
+				break
+			}
 		}
 	}
 
 	if sshKeyPath == "" {
-		return nil, fmt.Errorf("no default ssh key found")
+		return nil, fmt.Errorf("no ssh key found")
 	}
 
 	fmt.Printf("using ssh key: %v\n", sshKeyPath)
@@ -63,10 +68,10 @@ func getAuthMethod() (ssh.AuthMethod, error) {
 	return ssh.PublicKeys(signer), nil
 }
 
-func withSSHClient(address string, f func(*ssh.Client) error) error {
+func withSSHClient(address string, config *Config, f func(*ssh.Client) error) error {
 	fmt.Printf("connecting server: %s\n", address)
 
-	client, err := getSSHClient(address)
+	client, err := getSSHClient(address, config)
 	if err != nil {
 		return err
 	}

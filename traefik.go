@@ -28,7 +28,7 @@ providers:
 `
 
 func (r *remote) ensureTraefikSetup(email string) error {
-	return withSSHClient(r.address, func(client *ssh.Client) error {
+	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		stdOut, _, err := runSSHCommand(client, "docker ps --filter name=traefik --format \"{{.Names}}\"")
 		if err != nil {
 			return err
