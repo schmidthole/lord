@@ -17,8 +17,13 @@ func getSSHClient(server string, config *Config) (*ssh.Client, error) {
 		panic(err)
 	}
 
+	user := "root"
+	if config.User != "" {
+		user = config.User
+	}
+
 	sshConfig := &ssh.ClientConfig{
-		User: "root",
+		User: user,
 		Auth: []ssh.AuthMethod{
 			authMethod,
 		},

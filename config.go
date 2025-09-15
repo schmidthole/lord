@@ -51,6 +51,9 @@ type Config struct {
 
 	// private ssh key file path for server connections (optional)
 	SshKeyFile string
+
+	// ssh login user for server connections, defaults to root (optional)
+	User string
 }
 
 func loadConfig(configKey string) (*Config, error) {
@@ -67,6 +70,7 @@ func loadConfig(configKey string) (*Config, error) {
 	viper.SetDefault("platform", "linux/amd64")
 	viper.SetDefault("web", false)
 	viper.SetDefault("email", "admin@localshot")
+	viper.SetDefault("user", "root")
 
 	err := viper.ReadInConfig()
 	if err != nil {
