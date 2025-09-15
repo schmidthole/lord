@@ -60,6 +60,8 @@ web: true                             # enable web service with traefik
 hostname: myapp.example.com           # domain name (required if web: true)
 environmentfile: .env                 # environment variables file
 buildargfile: build.args              # docker build arguments file
+user: ubuntu                          # ssh login user (default: root)
+sshkeyfile: /path/to/private/key      # custom ssh private key file
 
 # additional volume mounts (follows docker format)
 volumes:
