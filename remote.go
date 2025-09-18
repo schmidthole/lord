@@ -64,43 +64,43 @@ func (r *remote) getDockerInstallCommands(osType string) ([]string, error) {
 	switch osType {
 	case "ubuntu", "debian":
 		return []string{
-			"apt-get update",
-			"apt-get upgrade -y",
-			"for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove -y $pkg; done",
-			"apt-get update",
-			"apt-get install -y ca-certificates curl",
-			"install -m 0755 -d /etc/apt/keyrings",
-			"curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc",
-			"chmod a+r /etc/apt/keyrings/docker.asc",
-			"echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable\" | /bin/tee /etc/apt/sources.list.d/docker.list > /dev/null",
-			"apt-get update",
-			"apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
-			"echo \"{\\\"log-driver\\\": \\\"local\\\"}\" | tee /etc/docker/daemon.json > /dev/null",
-			"systemctl enable docker",
-			"systemctl restart docker",
-			"mkdir -p /root/.docker/",
+			"sudo apt-get update",
+			"sudo apt-get upgrade -y",
+			"sudo for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do apt-get remove -y $pkg; done",
+			"sudo apt-get update",
+			"sudo apt-get install -y ca-certificates curl",
+			"sudo install -m 0755 -d /etc/apt/keyrings",
+			"sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc",
+			"sudo chmod a+r /etc/apt/keyrings/docker.asc",
+			"echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo \\\"$VERSION_CODENAME\\\") stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null",
+			"sudo apt-get update",
+			"sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
+			"echo \"{\\\"log-driver\\\": \\\"local\\\"}\" | sudo tee /etc/docker/daemon.json > /dev/null",
+			"sudo systemctl enable docker",
+			"sudo systemctl restart docker",
+			"sudo mkdir -p /root/.docker/",
 		}, nil
 	case "amzn":
 		return []string{
-			"dnf update -y",
-			"dnf remove -y docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine",
-			"dnf install -y docker",
-			"echo \"{\\\"log-driver\\\": \\\"local\\\"}\" | tee /etc/docker/daemon.json > /dev/null",
-			"systemctl enable docker",
-			"systemctl restart docker",
-			"mkdir -p /root/.docker/",
+			"sudo dnf update -y",
+			"sudo dnf remove -y docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine",
+			"sudo dnf install -y docker",
+			"echo \"{\\\"log-driver\\\": \\\"local\\\"}\" | sudo tee /etc/docker/daemon.json > /dev/null",
+			"sudo systemctl enable docker",
+			"sudo systemctl restart docker",
+			"sudo mkdir -p /root/.docker/",
 		}, nil
 	case "rhel", "centos":
 		return []string{
-			"yum update -y",
-			"yum remove -y docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine",
-			"yum install -y yum-utils device-mapper-persistent-data lvm2",
-			"yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo",
-			"yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
-			"echo \"{\\\"log-driver\\\": \\\"local\\\"}\" | tee /etc/docker/daemon.json > /dev/null",
-			"systemctl enable docker",
-			"systemctl restart docker",
-			"mkdir -p /root/.docker/",
+			"sudo yum update -y",
+			"sudo yum remove -y docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine",
+			"sudo yum install -y yum-utils device-mapper-persistent-data lvm2",
+			"sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo",
+			"sudo yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
+			"echo \"{\\\"log-driver\\\": \\\"local\\\"}\" | sudo tee /etc/docker/daemon.json > /dev/null",
+			"sudo systemctl enable docker",
+			"sudo systemctl restart docker",
+			"sudo mkdir -p /root/.docker/",
 		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported os type: %s", osType)
@@ -110,7 +110,7 @@ func (r *remote) getDockerInstallCommands(osType string) ([]string, error) {
 func (r *remote) ensureDockerInstalled(authFile string, recover bool) error {
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		if !recover {
-			_, _, err := runSSHCommand(client, "docker --version")
+			_, _, err := runSSHCommand(client, "sudo docker --version")
 			if err == nil {
 				return nil
 			}
@@ -161,19 +161,19 @@ func (r *remote) ensureDockerInstalled(authFile string, recover bool) error {
 
 func (r *remote) ensureDockerRunning() error {
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
-		_, _, err := runSSHCommand(client, "systemctl is-active --quiet docker")
+		_, _, err := runSSHCommand(client, "sudo systemctl is-active --quiet docker")
 		if err == nil {
 			return nil
 		}
 
 		fmt.Println("starting docker on server")
 
-		_, _, err = runSSHCommand(client, "systemctl enable docker")
+		_, _, err = runSSHCommand(client, "sudo systemctl enable docker")
 		if err != nil {
 			return fmt.Errorf("could not enable docker on server: %v", err)
 		}
 
-		_, _, err = runSSHCommand(client, "systemctl restart docker")
+		_, _, err = runSSHCommand(client, "sudo systemctl restart docker")
 		if err != nil {
 			return fmt.Errorf("could not start docker on server: %v", err)
 		}
@@ -184,7 +184,7 @@ func (r *remote) ensureDockerRunning() error {
 
 func (r *remote) pullContainer(imageTag string) error {
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
-		_, _, err := runSSHCommand(client, fmt.Sprintf("docker pull %s", imageTag))
+		_, _, err := runSSHCommand(client, fmt.Sprintf("sudo docker pull %s", imageTag))
 		if err != nil {
 			return err
 		}
@@ -197,7 +197,7 @@ func (r *remote) stopAndDeleteContainer(name string) error {
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		fmt.Println("stopping and deleting container if exists")
 
-		_, _, err := runSSHCommand(client, fmt.Sprintf("docker stop | true %s && docker rm --force %s", name, name))
+		_, _, err := runSSHCommand(client, fmt.Sprintf("sudo docker stop %s | true && sudo docker rm --force %s", name, name))
 		return err
 	})
 }
@@ -206,7 +206,7 @@ func (r *remote) getContainerStatus(name string) error {
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		fmt.Println("getting container status")
 
-		_, _, err := runSSHCommand(client, fmt.Sprintf("docker ps --filter name=%s", name))
+		_, _, err := runSSHCommand(client, fmt.Sprintf("sudo docker ps --filter name=%s", name))
 		return err
 	})
 }
@@ -216,8 +216,8 @@ func (r *remote) stageForContainer(name string, volumes []string, environmentFil
 		fmt.Println("staging host for container")
 
 		cmds := []string{
-			fmt.Sprintf("mkdir -p /etc/%s", name),
-			fmt.Sprintf("mkdir -p /var/%s", name),
+			fmt.Sprintf("sudo mkdir -p /etc/%s", name),
+			fmt.Sprintf("sudo mkdir -p /var/%s", name),
 		}
 
 		for _, v := range volumes {
@@ -226,7 +226,7 @@ func (r *remote) stageForContainer(name string, volumes []string, environmentFil
 				return fmt.Errorf("malformed volume mount")
 			}
 
-			cmds = append(cmds, fmt.Sprintf("mkdir -p %s", vParts[0]))
+			cmds = append(cmds, fmt.Sprintf("sudo mkdir -p %s", vParts[0]))
 		}
 
 		fmt.Println("creating volume mount and config directories")
@@ -253,7 +253,7 @@ func (r *remote) runContainer(name string, imageTag string, volumes []string, en
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		fmt.Println("running container")
 
-		runCommand := "docker run -d --restart unless-stopped"
+		runCommand := "sudo docker run -d --restart unless-stopped"
 		runCommand += fmt.Sprintf(" --name %s", name)
 		runCommand += fmt.Sprintf(" -v /var/%s:/data", name)
 
@@ -305,7 +305,7 @@ func (r *remote) streamContainerLogs(name string) error {
 			return err
 		}
 
-		err = session.Start(fmt.Sprintf("docker logs --follow --tail 30 %s", name))
+		err = session.Start(fmt.Sprintf("sudo docker logs --follow --tail 30 %s", name))
 		if err != nil {
 			return err
 		}
@@ -353,7 +353,7 @@ func (r *remote) downloadContainerLogs(name string) error {
 
 		fmt.Printf("downloading logs for container %s to %s\n", name, localLogPath)
 
-		logs, _, err := runSSHCommand(client, fmt.Sprintf("docker logs %s", name))
+		logs, _, err := runSSHCommand(client, fmt.Sprintf("sudo docker logs %s", name))
 		if err != nil {
 			return err
 		}

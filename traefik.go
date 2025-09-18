@@ -29,7 +29,7 @@ providers:
 
 func (r *remote) ensureTraefikSetup(email string) error {
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
-		stdOut, _, err := runSSHCommand(client, "docker ps --filter name=traefik --format \"{{.Names}}\"")
+		stdOut, _, err := runSSHCommand(client, "sudo docker ps --filter name=traefik --format \"{{.Names}}\"")
 		if err != nil {
 			return err
 		}
@@ -43,13 +43,13 @@ func (r *remote) ensureTraefikSetup(email string) error {
 
 		fmt.Println("checking for traefik docker network")
 
-		stdOut, _, err = runSSHCommand(client, "docker network ls --format '{{.Name}}'")
+		stdOut, _, err = runSSHCommand(client, "sudo docker network ls --format '{{.Name}}'")
 		if err != nil {
 			return err
 		}
 
 		if !strings.Contains(stdOut, "traefik") {
-			_, _, err = runSSHCommand(client, "docker network create traefik")
+			_, _, err = runSSHCommand(client, "sudo docker network create traefik")
 		}
 		if err != nil {
 			return err
@@ -58,12 +58,12 @@ func (r *remote) ensureTraefikSetup(email string) error {
 		fmt.Println("setting up traefik on server")
 
 		cmds := []string{
-			"mkdir -p /etc/traefik",
-			fmt.Sprintf("cat > /etc/traefik/traefik.yml <<EOF\n %v \nEOF", traefikConfig),
-			"touch /etc/traefik/acme.json",
-			"chmod 600 /etc/traefik/acme.json",
-			"docker rm --force traefik",
-			"docker run -d --restart unless-stopped --name traefik -v /var/run/docker.sock:/var/run/docker.sock -v /etc/traefik/traefik.yml:/etc/traefik/traefik.yml -v /etc/traefik/acme.json:/acme.json -p 80:80 -p 443:443 --network traefik traefik:latest",
+			"sudo mkdir -p /etc/traefik",
+			fmt.Sprintf("sudo cat > /etc/traefik/traefik.yml <<EOF\n %v \nEOF", traefikConfig),
+			"sudo touch /etc/traefik/acme.json",
+			"sudo chmod 600 /etc/traefik/acme.json",
+			"sudo docker rm --force traefik",
+			"sudo docker run -d --restart unless-stopped --name traefik -v /var/run/docker.sock:/var/run/docker.sock -v /etc/traefik/traefik.yml:/etc/traefik/traefik.yml -v /etc/traefik/acme.json:/acme.json -p 80:80 -p 443:443 --network traefik traefik:latest",
 		}
 
 		for _, cmd := range cmds {

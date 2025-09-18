@@ -303,13 +303,13 @@ func getNetworkStats(client *ssh.Client) (*NetworkStats, error) {
 
 func getDockerStats(client *ssh.Client) (*DockerStats, error) {
 	// check if docker is available
-	_, _, err := runSSHCommand(client, "docker --version")
+	_, _, err := runSSHCommand(client, "sudo docker --version")
 	if err != nil {
 		return nil, err
 	}
 
 	// get running containers
-	runningOut, _, err := runSSHCommand(client, "docker ps -q | wc -l")
+	runningOut, _, err := runSSHCommand(client, "sudo docker ps -q | wc -l")
 	if err != nil {
 		return nil, err
 	}
@@ -320,7 +320,7 @@ func getDockerStats(client *ssh.Client) (*DockerStats, error) {
 	}
 
 	// get total containers
-	totalOut, _, err := runSSHCommand(client, "docker ps -aq | wc -l")
+	totalOut, _, err := runSSHCommand(client, "sudo docker ps -aq | wc -l")
 	if err != nil {
 		return nil, err
 	}
