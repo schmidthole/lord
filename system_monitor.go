@@ -104,7 +104,7 @@ func (r *remote) getSystemStats(jsonOutput bool) error {
 
 func getCPUStats(client *ssh.Client, cpu *CPUStats) error {
 	// get cpu cores
-	coresOut, _, err := runSSHCommand(client, "nproc")
+	coresOut, _, err := runSSHCommand(client, "nproc", "")
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func getCPUStats(client *ssh.Client, cpu *CPUStats) error {
 	}
 
 	// get load average
-	loadOut, _, err := runSSHCommand(client, "uptime")
+	loadOut, _, err := runSSHCommand(client, "uptime", "")
 	if err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ func getCPUStats(client *ssh.Client, cpu *CPUStats) error {
 }
 
 func getMemoryStats(client *ssh.Client, mem *MemoryStats) error {
-	memOut, _, err := runSSHCommand(client, "free -b")
+	memOut, _, err := runSSHCommand(client, "free -b", "")
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,7 @@ func getMemoryStats(client *ssh.Client, mem *MemoryStats) error {
 }
 
 func getStorageStats(client *ssh.Client, storage *StorageStats) error {
-	diskOut, _, err := runSSHCommand(client, "df -B1 /")
+	diskOut, _, err := runSSHCommand(client, "df -B1 /", "")
 	if err != nil {
 		return err
 	}
@@ -234,7 +234,7 @@ func getStorageStats(client *ssh.Client, storage *StorageStats) error {
 
 func getNetworkStats(client *ssh.Client) (*NetworkStats, error) {
 	// get default network interface from /proc/net/route
-	routeOut, _, err := runSSHCommand(client, "awk 'NR>1 && $2==\"00000000\" {print $1; exit}' /proc/net/route")
+	routeOut, _, err := runSSHCommand(client, "awk 'NR>1 && $2==\"00000000\" {print $1; exit}' /proc/net/route", "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get network interface: %v", err)
 	}
@@ -245,7 +245,7 @@ func getNetworkStats(client *ssh.Client) (*NetworkStats, error) {
 	}
 
 	// get network stats with two samples
-	stats1Out, _, err := runSSHCommand(client, fmt.Sprintf("cat /proc/net/dev | grep %s | awk '{print $2 \" \" $10}'", iface))
+	stats1Out, _, err := runSSHCommand(client, fmt.Sprintf("cat /proc/net/dev | grep %s | awk '{print $2 \" \" $10}'", iface), "")
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +253,7 @@ func getNetworkStats(client *ssh.Client) (*NetworkStats, error) {
 	// wait 1 second for second sample
 	time.Sleep(1 * time.Second)
 
-	stats2Out, _, err := runSSHCommand(client, fmt.Sprintf("cat /proc/net/dev | grep %s | awk '{print $2 \" \" $10}'", iface))
+	stats2Out, _, err := runSSHCommand(client, fmt.Sprintf("cat /proc/net/dev | grep %s | awk '{print $2 \" \" $10}'", iface), "")
 	if err != nil {
 		return nil, err
 	}
@@ -303,13 +303,13 @@ func getNetworkStats(client *ssh.Client) (*NetworkStats, error) {
 
 func getDockerStats(client *ssh.Client) (*DockerStats, error) {
 	// check if docker is available
-	_, _, err := runSSHCommand(client, "sudo docker --version")
+	_, _, err := runSSHCommand(client, "sudo docker --version", "")
 	if err != nil {
 		return nil, err
 	}
 
 	// get running containers
-	runningOut, _, err := runSSHCommand(client, "sudo docker ps -q | wc -l")
+	runningOut, _, err := runSSHCommand(client, "sudo docker ps -q | wc -l", "")
 	if err != nil {
 		return nil, err
 	}
@@ -320,7 +320,7 @@ func getDockerStats(client *ssh.Client) (*DockerStats, error) {
 	}
 
 	// get total containers
-	totalOut, _, err := runSSHCommand(client, "sudo docker ps -aq | wc -l")
+	totalOut, _, err := runSSHCommand(client, "sudo docker ps -aq | wc -l", "")
 	if err != nil {
 		return nil, err
 	}

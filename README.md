@@ -39,6 +39,7 @@ lord -server       # only run and/or check the server setup (includes reverse pr
 lord -proxy        # only run and/or check the reverse proxy setup
 lord -recover      # attempt to recover a server that has a bad install/setup of lord dependencies
 lord -logdownload  # download a full log file from the server
+lord -registry     # only setup and authenticate to the container registry
 ```
 
 ## Configuration
@@ -60,6 +61,7 @@ web: true                             # enable web service with traefik
 hostname: myapp.example.com           # domain name (required if web: true)
 environmentfile: .env                 # environment variables file
 buildargfile: build.args              # docker build arguments file
+hostenvironmentfile: host.env         # host environment variables file
 user: ubuntu                          # ssh login user (default: root)
 sshkeyfile: /path/to/private/key      # custom ssh private key file
 
@@ -97,9 +99,29 @@ To perform actions against each, the `-config` flag can be included in the Lord 
 lord -config conf2 -deploy
 ```
 
-### Required Registry Setup
+### Host Environment Variables
 
-You must provide a `config.json` file with registry authentication. This file will be copied to your server to enable container pulls:
+The `hostenvironmentfile` field allows you to specify environment variables that will be available on the remote host during all application-specific commands. This is useful for:
+
+- Registry authentication credentials (AWS_ACCESS_KEY_ID, GOOGLE_APPLICATION_CREDENTIALS)
+- Cloud provider credentials for container pulls
+- Application-specific secrets that need to be available during deployment
+
+The specified file will be copied to `/etc/lord/{appname}` on the remote host and automatically sourced before executing Docker commands for your application. Each application maintains its own environment file, allowing different apps on the same host to have different environment variables.
+
+Example host environment file:
+```bash
+export AWS_ACCESS_KEY_ID=your_access_key
+export AWS_SECRET_ACCESS_KEY=your_secret_key
+export CUSTOM_DEPLOY_TOKEN=your_token
+```
+
+### Registry Authentication
+
+Lord supports two methods for registry authentication:
+
+#### Method 1: Auth File (Manual)
+Provide a `config.json` file with registry authentication that will be copied to your server:
 
 ```json
 {
@@ -109,6 +131,40 @@ You must provide a `config.json` file with registry authentication. This file wi
     }
   }
 }
+```
+
+**NOTE:** this method overwrites the entire `.docker/config.json` file on the host. In order to use this
+method, all containers on the host must share the same registry and authentication method.
+
+#### Method 2: Dynamic Authentication (Recommended)
+Lord can automatically authenticate to supported registries using environment variables. Currently supported:
+
+- **AWS ECR** - requires AWS credentials
+- **Digital Ocean Container Registry** - requires Digital Ocean API token
+
+When no `authfile` is specified in `lord.yml`, Lord will attempt dynamic authentication based on the registry URL.
+
+##### AWS ECR Authentication
+For ECR registries (URLs containing `amazonaws.com`), set these environment variables on the remote host:
+
+```bash
+# host.env example for ECR
+export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+export AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+export AWS_DEFAULT_REGION=us-west-2
+```
+
+##### Digital Ocean Container Registry Authentication
+For Digital Ocean registries (URLs containing `registry.digitalocean.com`), set this environment variable:
+
+```bash
+# host.env example for Digital Ocean
+export DIGITALOCEAN_ACCESS_TOKEN=dop_v1_your_token_here
+```
+
+Then reference the environment file in your `lord.yml`:
+```yaml
+hostenvironmentfile: host.env
 ```
 
 ## Installation

@@ -54,6 +54,9 @@ type Config struct {
 
 	// ssh login user for server connections, defaults to root (optional)
 	User string
+
+	// host environment file containing variables to source on the remote host (optional)
+	HostEnvironmentFile string
 }
 
 func loadConfig(configKey string) (*Config, error) {

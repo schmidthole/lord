@@ -85,12 +85,20 @@ func withSSHClient(address string, config *Config, f func(*ssh.Client) error) er
 	return f(client)
 }
 
-func runSSHCommand(client *ssh.Client, cmd string) (string, string, error) {
+func runSSHCommand(client *ssh.Client, cmd string, appName string) (string, string, error) {
 	session, err := client.NewSession()
 	if err != nil {
 		panic(err)
 	}
 	defer session.Close()
+
+	// source app-specific environment variables if they exist
+	var fullCmd string
+	if appName != "" {
+		fullCmd = fmt.Sprintf("test -f /etc/lord/%s && source /etc/lord/%s; %s", appName, appName, cmd)
+	} else {
+		fullCmd = cmd
+	}
 
 	fmt.Printf("> %s\n", cmd)
 
@@ -98,7 +106,7 @@ func runSSHCommand(client *ssh.Client, cmd string) (string, string, error) {
 	session.Stdout = &stdoutBuf
 	session.Stderr = &stderrBuf
 
-	err = session.Run(cmd)
+	err = session.Run(fullCmd)
 	if err != nil {
 		fmt.Println(stderrBuf.String())
 		return stdoutBuf.String(), stderrBuf.String(), fmt.Errorf("command execution failed: %v", err)

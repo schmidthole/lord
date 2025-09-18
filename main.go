@@ -14,7 +14,7 @@ var banner = `
                                            
 `
 
-var version = "8"
+var version = "9"
 
 func main() {
 	fmt.Println(banner)
@@ -32,6 +32,7 @@ func main() {
 	proxyFlag := flag.Bool("proxy", false, "only runs/checks the proxy setup")
 	logDownloadFlag := flag.Bool("logdownload", false, "download log file from the server")
 	monitorFlag := flag.Bool("monitor", false, "get system stats from the server")
+	registryFlag := flag.Bool("registry", false, "ensure the container registry can be authenticated on the host, including installing platform specific login tools")
 
 	flag.Parse()
 
@@ -76,7 +77,12 @@ func main() {
 	if *serverFlag || *deployFlag || *recoverFlag {
 		fmt.Println("checking server state")
 
-		err = server.ensureDockerInstalled(c.AuthFile, *recoverFlag)
+		err = server.ensureLordSetup()
+		if err != nil {
+			panic(err)
+		}
+
+		err = server.ensureDockerInstalled(*recoverFlag)
 		if err != nil {
 			panic(err)
 		}
@@ -85,7 +91,13 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+	}
 
+	if *serverFlag || *deployFlag || *recoverFlag || *registryFlag {
+		err = server.ensureRegistryAuthenticated(*recoverFlag)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	if *serverFlag || *deployFlag || *recoverFlag || *proxyFlag {

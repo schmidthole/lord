@@ -29,7 +29,7 @@ providers:
 
 func (r *remote) ensureTraefikSetup(email string) error {
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
-		stdOut, _, err := runSSHCommand(client, "sudo docker ps --filter name=traefik --format \"{{.Names}}\"")
+		stdOut, _, err := runSSHCommand(client, "sudo docker ps --filter name=traefik --format \"{{.Names}}\"", "")
 		if err != nil {
 			return err
 		}
@@ -43,13 +43,13 @@ func (r *remote) ensureTraefikSetup(email string) error {
 
 		fmt.Println("checking for traefik docker network")
 
-		stdOut, _, err = runSSHCommand(client, "sudo docker network ls --format '{{.Name}}'")
+		stdOut, _, err = runSSHCommand(client, "sudo docker network ls --format '{{.Name}}'", "")
 		if err != nil {
 			return err
 		}
 
 		if !strings.Contains(stdOut, "traefik") {
-			_, _, err = runSSHCommand(client, "sudo docker network create traefik")
+			_, _, err = runSSHCommand(client, "sudo docker network create traefik", "")
 		}
 		if err != nil {
 			return err
@@ -67,7 +67,7 @@ func (r *remote) ensureTraefikSetup(email string) error {
 		}
 
 		for _, cmd := range cmds {
-			_, _, err := runSSHCommand(client, cmd)
+			_, _, err := runSSHCommand(client, cmd, "")
 			if err != nil {
 				return err
 			}

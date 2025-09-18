@@ -23,26 +23,26 @@ func (r *remote) getHostOS() (string, error) {
 
 	err := withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		// try to identify the distro using /etc/os-release
-		osRelease, _, err := runSSHCommand(client, "cat /etc/os-release | grep ^ID= | cut -d'=' -f2 | tr -d '\"'")
+		osRelease, _, err := runSSHCommand(client, "cat /etc/os-release | grep ^ID= | cut -d'=' -f2 | tr -d '\"'", "")
 		if err == nil && osRelease != "" {
 			osType = strings.TrimSpace(osRelease)
 			return nil
 		}
 
 		// fallback to checking for specific files
-		_, _, err = runSSHCommand(client, "test -f /etc/amazon-linux-release")
+		_, _, err = runSSHCommand(client, "test -f /etc/amazon-linux-release", "")
 		if err == nil {
 			osType = "amzn"
 			return nil
 		}
 
-		_, _, err = runSSHCommand(client, "test -f /etc/debian_version")
+		_, _, err = runSSHCommand(client, "test -f /etc/debian_version", "")
 		if err == nil {
 			osType = "debian"
 			return nil
 		}
 
-		_, _, err = runSSHCommand(client, "test -f /etc/redhat-release")
+		_, _, err = runSSHCommand(client, "test -f /etc/redhat-release", "")
 		if err == nil {
 			osType = "rhel"
 			return nil
@@ -107,10 +107,32 @@ func (r *remote) getDockerInstallCommands(osType string) ([]string, error) {
 	}
 }
 
-func (r *remote) ensureDockerInstalled(authFile string, recover bool) error {
+func (r *remote) ensureLordSetup() error {
+	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
+		_, _, err := runSSHCommand(client, "sudo mkdir -p /etc/lord", "")
+		if err != nil {
+			return err
+		}
+
+		if r.config.HostEnvironmentFile != "" {
+			_, err := os.Stat(r.config.HostEnvironmentFile)
+			if err == nil {
+				fmt.Println("copying host environment file")
+				err = sftpCopyFileToRemote(client, r.config.HostEnvironmentFile, fmt.Sprintf("/etc/lord/%s", r.config.Name))
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	})
+}
+
+func (r *remote) ensureDockerInstalled(recover bool) error {
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		if !recover {
-			_, _, err := runSSHCommand(client, "sudo docker --version")
+			_, _, err := runSSHCommand(client, "sudo docker --version", "")
 			if err == nil {
 				return nil
 			}
@@ -133,26 +155,10 @@ func (r *remote) ensureDockerInstalled(authFile string, recover bool) error {
 		}
 
 		for _, cmd := range cmds {
-			_, _, err := runSSHCommand(client, cmd)
+			_, _, err := runSSHCommand(client, cmd, "")
 			if err != nil {
 				return err
 			}
-		}
-
-		// only copy auth file if it exists and is specified
-		if authFile != "" {
-			_, err := os.Stat(authFile)
-			if err == nil {
-				fmt.Println("copying docker auth file")
-				err = sftpCopyFileToRemote(client, authFile, "/root/.docker/config.json")
-				if err != nil {
-					return err
-				}
-			} else {
-				fmt.Println("no docker auth file provided, skipping registry authentication setup")
-			}
-		} else {
-			fmt.Println("no docker auth file specified, skipping registry authentication setup")
 		}
 
 		return nil
@@ -161,19 +167,19 @@ func (r *remote) ensureDockerInstalled(authFile string, recover bool) error {
 
 func (r *remote) ensureDockerRunning() error {
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
-		_, _, err := runSSHCommand(client, "sudo systemctl is-active --quiet docker")
+		_, _, err := runSSHCommand(client, "sudo systemctl is-active --quiet docker", "")
 		if err == nil {
 			return nil
 		}
 
 		fmt.Println("starting docker on server")
 
-		_, _, err = runSSHCommand(client, "sudo systemctl enable docker")
+		_, _, err = runSSHCommand(client, "sudo systemctl enable docker", "")
 		if err != nil {
 			return fmt.Errorf("could not enable docker on server: %v", err)
 		}
 
-		_, _, err = runSSHCommand(client, "sudo systemctl restart docker")
+		_, _, err = runSSHCommand(client, "sudo systemctl restart docker", "")
 		if err != nil {
 			return fmt.Errorf("could not start docker on server: %v", err)
 		}
@@ -184,7 +190,7 @@ func (r *remote) ensureDockerRunning() error {
 
 func (r *remote) pullContainer(imageTag string) error {
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
-		_, _, err := runSSHCommand(client, fmt.Sprintf("sudo docker pull %s", imageTag))
+		_, _, err := runSSHCommand(client, fmt.Sprintf("sudo docker pull %s", imageTag), r.config.Name)
 		if err != nil {
 			return err
 		}
@@ -197,7 +203,7 @@ func (r *remote) stopAndDeleteContainer(name string) error {
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		fmt.Println("stopping and deleting container if exists")
 
-		_, _, err := runSSHCommand(client, fmt.Sprintf("sudo docker stop %s | true && sudo docker rm --force %s", name, name))
+		_, _, err := runSSHCommand(client, fmt.Sprintf("sudo docker stop %s | true && sudo docker rm --force %s", name, name), r.config.Name)
 		return err
 	})
 }
@@ -206,7 +212,7 @@ func (r *remote) getContainerStatus(name string) error {
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		fmt.Println("getting container status")
 
-		_, _, err := runSSHCommand(client, fmt.Sprintf("sudo docker ps --filter name=%s", name))
+		_, _, err := runSSHCommand(client, fmt.Sprintf("sudo docker ps --filter name=%s", name), r.config.Name)
 		return err
 	})
 }
@@ -231,7 +237,7 @@ func (r *remote) stageForContainer(name string, volumes []string, environmentFil
 
 		fmt.Println("creating volume mount and config directories")
 		for _, cmd := range cmds {
-			_, _, err := runSSHCommand(client, cmd)
+			_, _, err := runSSHCommand(client, cmd, "")
 			if err != nil {
 				return err
 			}
@@ -276,7 +282,7 @@ func (r *remote) runContainer(name string, imageTag string, volumes []string, en
 
 		runCommand += fmt.Sprintf(" %s", imageTag)
 
-		_, _, err := runSSHCommand(client, runCommand)
+		_, _, err := runSSHCommand(client, runCommand, r.config.Name)
 		if err != nil {
 			return err
 		}
@@ -353,7 +359,7 @@ func (r *remote) downloadContainerLogs(name string) error {
 
 		fmt.Printf("downloading logs for container %s to %s\n", name, localLogPath)
 
-		logs, _, err := runSSHCommand(client, fmt.Sprintf("sudo docker logs %s", name))
+		logs, _, err := runSSHCommand(client, fmt.Sprintf("sudo docker logs %s", name), r.config.Name)
 		if err != nil {
 			return err
 		}
