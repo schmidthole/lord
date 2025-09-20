@@ -2,3 +2,4 @@
 lord.yml
 Dockerfile
 lord
+!easy-registry/Dockerfile
