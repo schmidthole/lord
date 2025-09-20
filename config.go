@@ -7,9 +7,24 @@ import (
 )
 
 var baseConfig = `name: myapp
-registry: my.realregistry.com/me
-email: user
 server: 0.0.0.0
+
+# optional fields
+# email: user@example.com                # email for tls certificates
+# registry: my.realregistry.com/me       # container registry url (optional if using direct deployments)
+# authfile: ./config.json                # docker registry auth file (required if using fixed login/auth for registry)
+# platform: linux/amd64                  # build platform 
+# target: production                     # docker build target stage
+# web: false                             # enable web service with traefik (defaults to false)
+# hostname: myapp.example.com            # domain name (required if web: true)
+# environmentfile: .env                  # environment variables file
+# buildargfile: build.args               # docker build arguments file
+# hostenvironmentfile: host.env          # host environment variables file (required if using a registry with dynamic login)
+# user: root                             # ssh login user 
+# sshkeyfile: /path/to/private/key       # custom ssh private key file (uses system default if not specified)
+# volumes:                               # additional volume mounts
+#   - /host/data:/container/data
+#   - /etc/config:/app/config
 `
 
 type Config struct {

@@ -14,7 +14,7 @@ var banner = `
                                            
 `
 
-var version = "9"
+var version = "10"
 
 func main() {
 	fmt.Println(banner)

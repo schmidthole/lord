@@ -6,19 +6,19 @@ Lord builds your Docker containers locally and deploys them to Linux servers via
 
 ## Quick Start
 
-Lord requires three things to get started:
+Lord requires these things to get started:
 
 1. A `Dockerfile` in your project directory
-2. A container registry (you must be logged in locally)
-3. A `lord.yml` configuration file
+2. A `lord.yml` configuration file
+3. A container registry (optional - you can use registry-less deployment)
 
 Get started by running `lord -init` in your project directory to generate a configuration template.
 
 ## How It Works
 
 1. **Build**: Lord builds your Docker container locally with the specified platform
-2. **Push**: Container is pushed to your configured registry
-3. **Deploy**: Lord SSHs to your server and pulls/runs the container
+2. **Push/Transfer**: Container is either pushed to your configured registry or transferred directly via SFTP (registry-less)
+3. **Deploy**: Lord SSHs to your server and pulls/loads/runs the container
 4. **Proxy**: Web services are automatically configured with Traefik reverse proxy for https
 
 ### Container Conventions
@@ -49,9 +49,11 @@ Create a `lord.yml` file in your project directory:
 ```yaml
 # required fields
 name: myapp                           # unique app name per host
-registry: my.realregistry.com/me      # container registry url
-authfile: ./config.json               # docker registry auth file
 server: 192.168.1.100                 # target server ip address
+
+# registry configuration (optional)
+registry: my.realregistry.com/me      # container registry url (omit for registry-less deployment)
+authfile: ./config.json               # docker registry auth file
 
 # optional fields
 email: user@example.com               # email for tls certificates
@@ -187,7 +189,7 @@ hostenvironmentfile: host.env
 
 - Docker installed locally for building containers
 - SSH key access to your target deployment servers
-- Access to a container registry (Docker Hub, GitHub Container Registry, etc.)
+- Access to a container registry (Docker Hub, GitHub Container Registry, etc.) - optional for registry-less deployment
 
 ### Supported Linux Distributions
 
@@ -200,6 +202,33 @@ Lord automatically installs Docker on target servers and supports the following 
 - **Red Hat Enterprise Linux (RHEL)** - Uses yum package manager with Docker's official repository
 
 Lord automatically detects the host operating system and uses the appropriate package manager and repositories for Docker installation.
+
+## Registry-less Deployment
+
+Lord supports deployment without a container registry by omitting the `registry` field from your configuration. In this mode:
+
+1. The container is built locally using `docker build`
+2. The image is saved to a compressed tar.gz file using `docker save`
+3. The file is transferred to the remote server via SFTP
+4. The image is loaded on the remote server using `docker load`
+5. The container is run normally
+
+This approach is useful for:
+- Private deployments without registry access
+- Simple deployments to single servers
+- Development environments
+- Air-gapped deployments
+
+Example registry-less configuration:
+```yaml
+name: myapp
+server: 192.168.1.100
+hostname: myapp.local
+web: true
+email: admin@example.com
+```
+
+**Note:** Registry-less deployment requires sufficient disk space on both local and remote machines for the compressed container image.
 
 ## Why Not Use Docker Compose?
 
