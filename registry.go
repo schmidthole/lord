@@ -153,6 +153,11 @@ func (r *remote) registryLogin() error {
 }
 
 func (r *remote) ensureRegistryAuthenticated(recover bool) error {
+	if r.config.Registry == "" {
+		fmt.Println("no container registry in use, skipping authentication")
+		return nil
+	}
+
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		// only copy auth file if it exists and is specified
 		if r.config.AuthFile != "" {

@@ -199,6 +199,19 @@ func (r *remote) pullContainer(imageTag string) error {
 	})
 }
 
+func (r *remote) directLoadContainer(imageName string) error {
+	containerSaveFile := fmt.Sprintf("%s.tar.gz", imageName)
+	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
+		err := sftpCopyFileToRemote(client, containerSaveFile, fmt.Sprintf("/tmp/%s", containerSaveFile))
+		if err != nil {
+			return err
+		}
+
+		_, _, err = runSSHCommand(client, fmt.Sprintf("gunzip -c /tmp/%s | docker load", containerSaveFile), r.config.Name)
+		return err	
+	})
+}
+
 func (r *remote) stopAndDeleteContainer(name string) error {
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		fmt.Println("stopping and deleting container if exists")

@@ -37,7 +37,7 @@ func runLocalCommand(fullCommand string) (string, string, error) {
 	return stdoutBuf.String(), stderrBuf.String(), err
 }
 
-func BuildAndPushContainer(imageName string, tag string, platform string, buildArgFile string, target string) error {
+func BuildContainer(imageName string, tag string, platform string, buildArgFile string, target string) error {
 	fmt.Println("building container")
 
 	buildCmd := fmt.Sprintf("docker build --progress=plain --platform %s -t %s", platform, imageName)
@@ -66,6 +66,16 @@ func BuildAndPushContainer(imageName string, tag string, platform string, buildA
 		return err
 	}
 
+
+	return nil
+}
+
+func BuildAndPushContainer(imageName string, tag string, platform string, buildArgFile string, target string) error {
+	err := BuildContainer(imageName, tag, platform, buildArgFile, target)
+	if err != nil {
+		return err
+	}
+
 	fmt.Println("pushing container to registry")
 
 	_, _, err = runLocalCommand(fmt.Sprintf("docker push %s", tag))
@@ -74,6 +84,32 @@ func BuildAndPushContainer(imageName string, tag string, platform string, buildA
 	}
 
 	return nil
+}
+
+func BuildAndSaveContainer(imageName string, tag string, platform string, buildArgFile string, target string) error {
+	err := BuildContainer(imageName, tag, platform, buildArgFile, target)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("saving container")
+
+	_, _, err = runLocalCommand(fmt.Sprintf("docker save %s | gzip > %s.tar.gz", tag, imageName))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteSavedContainer(imageName string) error {
+	filename := fmt.Sprintf("%s.tar.gz", imageName)
+
+	err := os.Remove(filename)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	return err
 }
 
 func initLocalProject() error {

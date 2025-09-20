@@ -111,9 +111,19 @@ func main() {
 	}
 
 	if *deployFlag {
-		imageTag := fmt.Sprintf("%s/%s:latest", c.Registry, c.Name)
+		var imageTag string
+		if c.Registry == "" {
+			imageTag = fmt.Sprintf("lord_direct/%s:latest", c.Name)
+		} else {
+			imageTag = fmt.Sprintf("%s/%s:latest", c.Registry, c.Name)
+		}
 
-		err = BuildAndPushContainer(c.Name, imageTag, c.Platform, c.BuildArgFile, c.Target)
+		if c.Registry == "" {
+			err = BuildAndSaveContainer(c.Name, imageTag, c.Platform, c.BuildArgFile, c.Target)
+		} else {
+			err = BuildAndPushContainer(c.Name, imageTag, c.Platform, c.BuildArgFile, c.Target)
+		}
+
 		if err != nil {
 			panic(err)
 		}
@@ -125,7 +135,12 @@ func main() {
 			panic(err)
 		}
 
-		err = server.pullContainer(imageTag)
+		if c.Registry == "" {
+			err = server.directLoadContainer(c.Name)
+		} else {
+			err = server.pullContainer(imageTag)
+		}
+
 		if err != nil {
 			panic(err)
 		}
