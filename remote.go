@@ -78,7 +78,6 @@ func (r *remote) getDockerInstallCommands(osType string) ([]string, error) {
 			"echo \"{\\\"log-driver\\\": \\\"local\\\"}\" | sudo tee /etc/docker/daemon.json > /dev/null",
 			"sudo systemctl enable docker",
 			"sudo systemctl restart docker",
-			"sudo mkdir -p /root/.docker/",
 		}, nil
 	case "amzn":
 		return []string{
@@ -88,7 +87,6 @@ func (r *remote) getDockerInstallCommands(osType string) ([]string, error) {
 			"echo \"{\\\"log-driver\\\": \\\"local\\\"}\" | sudo tee /etc/docker/daemon.json > /dev/null",
 			"sudo systemctl enable docker",
 			"sudo systemctl restart docker",
-			"sudo mkdir -p /root/.docker/",
 		}, nil
 	case "rhel", "centos":
 		return []string{
@@ -100,7 +98,6 @@ func (r *remote) getDockerInstallCommands(osType string) ([]string, error) {
 			"echo \"{\\\"log-driver\\\": \\\"local\\\"}\" | sudo tee /etc/docker/daemon.json > /dev/null",
 			"sudo systemctl enable docker",
 			"sudo systemctl restart docker",
-			"sudo mkdir -p /root/.docker/",
 		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported os type: %s", osType)
