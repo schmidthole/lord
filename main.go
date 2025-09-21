@@ -14,7 +14,7 @@ var banner = `
                                            
 `
 
-var version = "10"
+var version = "11"
 
 func main() {
 	fmt.Println(banner)
@@ -33,6 +33,7 @@ func main() {
 	logDownloadFlag := flag.Bool("logdownload", false, "download log file from the server")
 	monitorFlag := flag.Bool("monitor", false, "get system stats from the server")
 	registryFlag := flag.Bool("registry", false, "ensure the container registry can be authenticated on the host, including installing platform specific login tools")
+	dozzleFlag := flag.Bool("dozzle", false, "open dozzle web ui for monitoring containers via ssh tunnel")
 
 	flag.Parse()
 
@@ -183,6 +184,11 @@ func main() {
 		}
 	} else if *monitorFlag {
 		err = server.getSystemStats(false)
+		if err != nil {
+			panic(err)
+		}
+	} else if *dozzleFlag {
+		err = startDozzleUI(c.Server, c)
 		if err != nil {
 			panic(err)
 		}
