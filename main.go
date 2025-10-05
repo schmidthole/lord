@@ -114,7 +114,7 @@ func main() {
 	if *deployFlag {
 		var imageTag string
 		if c.Registry == "" {
-			imageTag = fmt.Sprintf("lord_direct/%s:latest", c.Name)
+			imageTag = fmt.Sprintf("lorddirect/%s:latest", c.Name)
 		} else {
 			imageTag = fmt.Sprintf("%s/%s:latest", c.Registry, c.Name)
 		}
