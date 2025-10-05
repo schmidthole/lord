@@ -113,6 +113,18 @@ func (r *remote) ensureRegistryToolsInstalled(recover bool) error {
 	})
 }
 
+func extractAwsRegion(url string) (string, error) {
+	urlComponents := strings.Split(url, ".")
+
+	for i, comp := range urlComponents {
+		if comp == "amazonaws" {
+			return urlComponents[i-1], nil
+		}
+	}
+
+	return "", fmt.Errorf("could not find aws region, url invalid %s", url)
+}
+
 func (r *remote) registryLogin() error {
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		registryType := detectRegistryType(r.config.Registry)
@@ -123,14 +135,14 @@ func (r *remote) registryLogin() error {
 		switch registryType {
 		case RegistryEcr:
 			fmt.Println("authenticating to ecr registry")
-			// get registry region from url
-			regionStart := strings.Index(r.config.Registry, ".")
-			regionEnd := strings.Index(r.config.Registry[regionStart+1:], ".") + regionStart + 1
-			region := r.config.Registry[regionStart+1 : regionEnd]
+			region, err := extractAwsRegion(r.config.Registry)
+			if err != nil {
+				return err
+			}
 
 			// get ecr login token and login to docker
 			loginCmd := fmt.Sprintf("aws ecr get-login-password --region %s | sudo docker login --username AWS --password-stdin %s", region, r.config.Registry)
-			_, _, err := runSSHCommand(client, loginCmd, "")
+			_, _, err = runSSHCommand(client, loginCmd, "")
 			if err != nil {
 				return fmt.Errorf("failed to login to ecr: %v", err)
 			}
