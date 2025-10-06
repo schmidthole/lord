@@ -40,6 +40,7 @@ lord -proxy        # only run and/or check the reverse proxy setup
 lord -recover      # attempt to recover a server that has a bad install/setup of lord dependencies
 lord -logdownload  # download a full log file from the server
 lord -registry     # only setup and authenticate to the container registry
+lord -dozzle       # run the dozzle ui locally connected to the remote container
 ```
 
 ## Configuration
@@ -169,41 +170,7 @@ Then reference the environment file in your `lord.yml`:
 hostenvironmentfile: host.env
 ```
 
-## Installation
-
-### From Source
-
-1. Install Go 1.19+
-2. Clone this repository:
-   ```sh
-   git clone https://github.com/yourusername/lord.git
-   cd lord
-   ```
-3. Build and install:
-   ```sh
-   make build        # builds ./lord binary
-   make install      # installs to /usr/local/bin (requires sudo)
-   ```
-
-### Prerequisites
-
-- Docker installed locally for building containers
-- SSH key access to your target deployment servers
-- Access to a container registry (Docker Hub, GitHub Container Registry, etc.) - optional for registry-less deployment
-
-### Supported Linux Distributions
-
-Lord automatically installs Docker on target servers and supports the following Linux distributions:
-
-- **Ubuntu** - Uses apt package manager with Docker's official repository
-- **Debian** - Uses apt package manager with Docker's official repository  
-- **Amazon Linux 2023** - Uses dnf package manager with Amazon's default repositories
-- **CentOS** - Uses yum package manager with Docker's official repository
-- **Red Hat Enterprise Linux (RHEL)** - Uses yum package manager with Docker's official repository
-
-Lord automatically detects the host operating system and uses the appropriate package manager and repositories for Docker installation.
-
-## Registry-less Deployment
+### Registry-less Deployment
 
 Lord supports deployment without a container registry by omitting the `registry` field from your configuration. In this mode:
 
@@ -229,6 +196,40 @@ email: admin@example.com
 ```
 
 **Note:** Registry-less deployment requires sufficient disk space on both local and remote machines for the compressed container image.
+
+## Installation
+
+### From Source
+
+1. Install Go 1.19+
+2. Clone this repository:
+   ```sh
+   git clone https://github.com/yourusername/lord.git
+   cd lord
+   ```
+3. Build and install:
+   ```sh
+   make build        # builds ./lord binary
+   make install      # installs to /usr/local/bin (requires sudo)
+   ```
+
+### Prerequisites
+
+- Docker installed locally for building containers
+- SSH key access to your target deployment servers
+- Access to a container registry (Docker Hub, GitHub Container Registry, etc.) - optional for registry-less deployment
+
+### Supported Linux Distributions
+
+Lord automatically installs Docker and registry tools on target servers and supports the following Linux distributions:
+
+- **Ubuntu** - Uses apt package manager with Docker's official repository
+- **Debian** - Uses apt package manager with Docker's official repository  
+- **Amazon Linux 2023** - Uses dnf package manager with Amazon's default repositories
+- **CentOS** - Uses yum package manager with Docker's official repository
+- **Red Hat Enterprise Linux (RHEL)** - Uses yum package manager with Docker's official repository
+
+Lord automatically detects the host operating system and uses the appropriate package manager and repositories for Docker installation.
 
 ## Why Not Use Docker Compose?
 
