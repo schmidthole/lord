@@ -14,7 +14,7 @@ var banner = `
                                            
 `
 
-var version = "11"
+var version = "12"
 
 func main() {
 	fmt.Println(banner)
@@ -94,7 +94,7 @@ func main() {
 		}
 	}
 
-	if *serverFlag || *deployFlag || *recoverFlag || *registryFlag {
+	if (*serverFlag || *deployFlag || *recoverFlag || *registryFlag) && c.Registry != "" {
 		err = server.ensureRegistryAuthenticated(*recoverFlag)
 		if err != nil {
 			panic(err)
@@ -144,6 +144,13 @@ func main() {
 
 		if err != nil {
 			panic(err)
+		}
+
+		if c.Registry == "" {
+			err = DeleteSavedContainer(c.Name)
+			if err != nil {
+				fmt.Printf("warning: failed to cleanup local container file: %v\n", err)
+			}
 		}
 
 		err = server.stopAndDeleteContainer(c.Name)
