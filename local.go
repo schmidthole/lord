@@ -94,7 +94,12 @@ func BuildAndSaveContainer(imageName string, tag string, platform string, buildA
 
 	fmt.Println("saving container")
 
-	_, _, err = runLocalCommand(fmt.Sprintf("docker save %s | gzip > %s.tar.gz", tag, imageName))
+	_, _, err = runLocalCommand(fmt.Sprintf("docker save %s -o %s.tar", tag, imageName))
+	if err != nil {
+		return err
+	}
+
+	_, _, err = runLocalCommand(fmt.Sprintf("gzip %s.tar", imageName))
 	if err != nil {
 		return err
 	}
