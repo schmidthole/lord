@@ -207,8 +207,17 @@ func (r *remote) directLoadContainer(imageName string) error {
 			return err
 		}
 
-		_, _, err = runSSHCommand(client, fmt.Sprintf("gunzip -c /tmp/%s | docker load", containerSaveFile), r.config.Name)
-		return err	
+		_, _, err = runSSHCommand(client, fmt.Sprintf("gunzip -c /tmp/%s | sudo docker load", containerSaveFile), r.config.Name)
+		if err != nil {
+			return err
+		}
+
+		_, _, err = runSSHCommand(client, fmt.Sprintf("rm /tmp/%s", containerSaveFile), r.config.Name)
+		if err != nil {
+			fmt.Printf("warning: failed to cleanup remote container file: %v\n", err)
+		}
+
+		return nil
 	})
 }
 
