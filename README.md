@@ -1,4 +1,13 @@
-![Lord Logo](img/logo.png)
+# LORD
+
+```
+██╗      ██████╗ ██████╗ ██████╗ 
+██║     ██╔═══██╗██╔══██╗██╔══██╗
+██║     ██║   ██║██████╔╝██║  ██║
+██║     ██║   ██║██╔══██╗██║  ██║
+███████╗╚██████╔╝██║  ██║██████╔╝
+╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ 
+```
 
 An ultra minimalist PaaS management service for deploying Docker containers. All you need is Docker and SSH access to a server. Inspired by other "self hosting" PaaS frameworks and the need to break free from the complexity of "cloud native" services for the majority of real world applications.
 
