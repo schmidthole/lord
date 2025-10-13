@@ -199,12 +199,25 @@ email: admin@example.com
 
 ## Installation
 
+### Binary Releases (Recommended)
+
+```bash
+# macOS (Apple Silicon)
+curl -sL https://github.com/schmidthole/lord/releases/latest/download/lord-macos-arm64 -o /usr/local/bin/lord && chmod +x /usr/local/bin/lord
+
+# macOS (Intel)
+curl -sL https://github.com/schmidthole/lord/releases/latest/download/lord-macos-amd64 -o /usr/local/bin/lord && chmod +x /usr/local/bin/lord
+
+# Linux (x86_64)
+curl -sL https://github.com/schmidthole/lord/releases/latest/download/lord-linux-amd64 -o /usr/local/bin/lord && chmod +x /usr/local/bin/lord
+```
+
 ### From Source
 
 1. Install Go 1.19+
 2. Clone this repository:
    ```sh
-   git clone https://github.com/yourusername/lord.git
+   git clone https://github.com/schmidthole/lord.git
    cd lord
    ```
 3. Build and install:
