@@ -1,4 +1,4 @@
-# Lord
+![Lord Logo](img/logo.png)
 
 An ultra minimalist PaaS management service for deploying Docker containers. All you need is Docker and SSH access to a server. Inspired by other "self hosting" PaaS frameworks and the need to break free from the complexity of "cloud native" services for the majority of real world applications.
 
@@ -11,7 +11,9 @@ Lord utilizes existing container utilities and your local machine (or CI/CD prov
 * Automatically serves web apps via https (using Traefik reverse proxy)
 * Log tailing and system monitoring via CLI or Dozzle UI
 
-## Installation
+Deploy from your PC or github actions. Deploy to a remote EC2 instance or a Linux server in your bedroom. Lord doesn't care.
+
+# Installation
 
 **Prerequisites**
 
@@ -45,7 +47,7 @@ curl -sL https://github.com/schmidthole/lord/releases/latest/download/lord-linux
    make install      # installs to /usr/local/bin (requires sudo)
    ```
 
-## Commands
+# Commands
 
 All lord commands are run from your project root directory and require a `lord.yml` configuration file to be present.
 
@@ -63,7 +65,7 @@ lord -registry     # only setup and authenticate to the container registry
 lord -dozzle       # run the dozzle ui locally connected to the remote container
 ```
 
-## How Does it Work
+# How Does it Work
 
 Lord is meant to be as simple to setup and run as possible. To get started you need:
 
@@ -94,7 +96,7 @@ You may also wish to monitor your application with the following commands:
 * `lord -monitor` to check system load of the host
 * `lord -dozzle` to connect and run the dozzle container monitoring UI, which will allow you to view all containers on the host
 
-### Container Conventions
+## Container Conventions
 
 Lord requires the following minimal set of conventions for all containers it deploys:
 
@@ -102,7 +104,7 @@ Lord requires the following minimal set of conventions for all containers it dep
 * Persistent data should use the `/data` volume mount
 * Additional volumes can be specified in configuration
 
-## Configuration
+# Configuration
 
 The following is a complete reference to Lord's configuration values:
 
@@ -133,7 +135,7 @@ volumes:
   - /etc/config:/app/config
 ```
 
-## Supported Linux Distributions
+# Supported Linux Distributions
 
 Lord automatically installs Docker and registry tools on target servers and supports the following Linux distributions:
 
@@ -145,9 +147,9 @@ Lord automatically installs Docker and registry tools on target servers and supp
 
 Lord automatically detects the host operating system and uses the appropriate package manager and repositories for Docker installation.
 
-## Advanced Usage
+# Advanced Usage
 
-### Supporting Multiple Applications/Containers
+## Supporting Multiple Applications/Containers
 
 Lord supports multiple `lord.yml` files in a single repository in cases where:
 
@@ -176,9 +178,9 @@ To perform actions against each separate config, the `-config` flag can be inclu
 lord -config conf2 -deploy
 ```
 
-### Environment Variables
+## Environment Variables
 
-#### Remote Server Environment Variables
+### Remote Server Environment Variables
 
 The `hostenvironmentfile` field allows you to specify environment variables that will be available on the remote host during all application-specific commands. This is useful for:
 
@@ -195,19 +197,19 @@ export AWS_SECRET_ACCESS_KEY=your_secret_key
 export CUSTOM_DEPLOY_TOKEN=your_token
 ```
 
-#### Container Environment Variables
+### Container Environment Variables
 
 Environment variables can be injected into the container via a `.env` file supplied in the `lord.yml` file. The environment variables contained in this file are only available to the container during runtime and not to the remote host during deployment.
 
-### Registry Usage
+## Registry Usage
 
 Lord optionally supports the ability to push/pull a container via a supported registry provided instead of direct save/transfer/load onto the remote host. This doesn't pose much advantage currently, but registries will become a more useful in the future once Lord supports multiple load balanced hosts, rollbacks, etc.
 
-### Registry Authentication
+## Registry Authentication
 
 Lord supports two methods for registry authentication:
 
-#### Method 1: Auth File (Manual)
+### Method 1: Auth File (Manual)
 Provide a `config.json` file with registry authentication that will be copied to your server:
 
 ```json
@@ -223,7 +225,7 @@ Provide a `config.json` file with registry authentication that will be copied to
 **NOTE:** this method overwrites the entire `.docker/config.json` file on the host. In order to use this
 method, all containers on the host must share the same registry and authentication method.
 
-#### Method 2: Dynamic Authentication (Recommended)
+### Method 2: Dynamic Authentication (Recommended)
 Lord can automatically authenticate to supported registries using environment variables. Currently supported:
 
 - **AWS ECR** - requires AWS credentials
@@ -231,7 +233,7 @@ Lord can automatically authenticate to supported registries using environment va
 
 When no `authfile` is specified in `lord.yml`, Lord will attempt dynamic authentication based on the registry URL.
 
-##### AWS ECR Authentication
+#### AWS ECR Authentication
 For ECR registries (URLs containing `amazonaws.com`), set these environment variables on the remote host:
 
 ```bash
@@ -241,7 +243,7 @@ export AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
 export AWS_DEFAULT_REGION=us-west-2
 ```
 
-##### Digital Ocean Container Registry Authentication
+#### Digital Ocean Container Registry Authentication
 For Digital Ocean registries (URLs containing `registry.digitalocean.com`), set this environment variable:
 
 ```bash
@@ -254,7 +256,7 @@ Then reference the environment file in your `lord.yml`:
 hostenvironmentfile: host.env
 ```
 
-## Why Not Use Docker Compose?
+# Why Not Use Docker Compose?
 
 Lord takes a different approach from Docker Compose by focusing on unrelated single-container deployments across multiple remote servers. While Docker Compose excels at orchestrating multi-container applications on a single host, Lord is designed for:
 
@@ -266,6 +268,14 @@ Lord takes a different approach from Docker Compose by focusing on unrelated sin
 
 Docker Compose requires configuration files on each server and is better suited for applications with multiple interconnected services. Lord eliminates server-side configuration complexity by managing everything through SSH from your local machine.
 
-## License
+# Roadmap
+
+Lord is very simple and focused, but could get more features in the future. These are a few that are being worked on:
+
+* Rollbacks via registry
+* Load balanced traffic to multiple remote hosts
+* Automated deployment and connection to self-hosted container registry
+
+# License
 
 BSD 3-Clause License - see LICENSE file for details.
