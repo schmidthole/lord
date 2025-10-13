@@ -2,7 +2,7 @@
 
 An ultra minimalist PaaS management service for deploying Docker containers. All you need is Docker and SSH access to a server. Inspired by other "self hosting" PaaS frameworks and the need to break free from the complexity of "cloud native" services for the majority of real world applications.
 
-Lord utilizes existing container utilities and your local machine (or CI/CD provider) and environment as the "builder" for your applications, automating container deployment/hosting with the following core features:
+Lord utilizes existing container utilities and your local machine (or CI/CD provider) as the "builder" for your applications, automating container deployment/hosting with the following core features:
 
 * Automatic configuration of remote host for container deployment
 * Seamless deploy and destroy of application
