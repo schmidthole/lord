@@ -70,7 +70,7 @@ func main() {
 
 	c, err := loadConfig(*configFlag)
 	if err != nil {
-		panic(err)
+		printConsoleError("error loading lord config", err)
 	}
 
 	server := remote{c.Server, c}
@@ -80,24 +80,24 @@ func main() {
 
 		err = server.ensureLordSetup()
 		if err != nil {
-			panic(err)
+			printConsoleError("error with initial setup of the remote server", err)
 		}
 
 		err = server.ensureDockerInstalled(*recoverFlag)
 		if err != nil {
-			panic(err)
+			printConsoleError("error installing docker on the remote server", err)
 		}
 
 		err = server.ensureDockerRunning()
 		if err != nil {
-			panic(err)
+			printConsoleError("error running docker on the remote server", err)
 		}
 	}
 
 	if (*serverFlag || *deployFlag || *recoverFlag || *registryFlag) && c.Registry != "" {
 		err = server.ensureRegistryAuthenticated(*recoverFlag)
 		if err != nil {
-			panic(err)
+			printConsoleError("error authenticating to registry", err)
 		}
 	}
 
@@ -106,7 +106,7 @@ func main() {
 		if c.Web {
 			err = server.ensureTraefikSetup(c.Email)
 			if err != nil {
-				panic(err)
+				printConsoleError("error setting up reverse proxy on remote server", err)
 			}
 		}
 	}
@@ -121,29 +121,37 @@ func main() {
 
 		if c.Registry == "" {
 			err = BuildAndSaveContainer(c.Name, imageTag, c.Platform, c.BuildArgFile, c.Target)
+
+			if err != nil {
+				printConsoleError("error building and saving the container", err)
+			}
 		} else {
 			err = BuildAndPushContainer(c.Name, imageTag, c.Platform, c.BuildArgFile, c.Target)
-		}
 
-		if err != nil {
-			panic(err)
+			if err != nil {
+				printConsoleError("error building and pusing container to registry", err)
+			}
 		}
 
 		fmt.Println("updating and running container on server")
 
 		err = server.stageForContainer(c.Name, c.Volumes, c.EnvironmentFile)
 		if err != nil {
-			panic(err)
+			printConsoleError("error staging remote server for running the container", err)
 		}
 
 		if c.Registry == "" {
 			err = server.directLoadContainer(c.Name)
+
+			if err != nil {
+				printConsoleError("error direct loading container onto remote server", err)
+			}
 		} else {
 			err = server.pullContainer(imageTag)
-		}
 
-		if err != nil {
-			panic(err)
+			if err != nil {
+				printConsoleError("error pulling container from registry on remote server", err)
+			}
 		}
 
 		if c.Registry == "" {
@@ -155,51 +163,51 @@ func main() {
 
 		err = server.stopAndDeleteContainer(c.Name)
 		if err != nil {
-			panic(err)
+			printConsoleError("error stopping/deleting container on remote server", err)
 		}
 
 		err = server.runContainer(c.Name, imageTag, c.Volumes, c.EnvironmentFile, c.Web, c.Hostname)
 		if err != nil {
-			panic(err)
+			printConsoleError("error runing container on remote server", err)
 		}
 
 		fmt.Println("finished deployment")
 	} else if *logsFlag {
 		err = server.streamContainerLogs(c.Name)
 		if err != nil {
-			panic(err)
+			printConsoleError("error streaming container logs", err)
 		}
 	} else if *destroyFLag {
 		err = server.stopAndDeleteContainer(c.Name)
 		if err != nil {
-			panic(err)
+			printConsoleError("error stopping/deleting container on remote server", err)
 		}
 	} else if *statusFlag {
 		err = server.getContainerStatus(c.Name)
 		if err != nil {
-			panic(err)
+			printConsoleError("error getting container status on remote server", err)
 		}
 	} else if *logDownloadFlag {
 		initLocalLogDirectory()
 		if err != nil {
-			panic(err)
+			printConsoleError("error creating local log storage directory", err)
 		}
 
 		err = server.downloadContainerLogs(c.Name)
 		if err != nil {
-			panic(err)
+			printConsoleError("error downloading logs from remote server", err)
 		}
 	} else if *monitorFlag {
 		err = server.getSystemStats(false)
 		if err != nil {
-			panic(err)
+			printConsoleError("error getting system stats from remote server", err)
 		}
 	} else if *dozzleFlag {
 		err = startDozzleUI(c.Server, c)
 		if err != nil {
-			panic(err)
+			printConsoleError("error starting and connecting dozzle ui", err)
 		}
 	} else if !*serverFlag && !*recoverFlag && !*proxyFlag {
-		panic(fmt.Errorf("not a valid command"))
+		fmt.Println("not a valid command")
 	}
 }
