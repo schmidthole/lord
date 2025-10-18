@@ -182,6 +182,9 @@ func (r *remote) ensureRegistryAuthenticated(recover bool) error {
 
 				fmt.Println("creating .docker directory to place auth file")
 				_, _, err = runSSHCommand(client, fmt.Sprintf("sudo mkdir -p %s", dockerConfigPath), "")
+				if err != nil {
+					return err
+				}
 
 				fmt.Println("copying docker auth file")
 				err = sftpCopyFileToRemote(client, r.config.AuthFile, fmt.Sprintf("%s/config.json", dockerConfigPath))
