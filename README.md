@@ -33,13 +33,13 @@ Deploy from your PC or github actions. Deploy to a remote EC2 instance or a Linu
 
 ```bash
 # macOS (Apple Silicon)
-curl -sL https://github.com/schmidthole/lord/releases/latest/download/lord-macos-arm64 -o /usr/local/bin/lord && chmod +x /usr/local/bin/lord
+curl -fsSL https://github.com/schmidthole/lord/releases/latest/download/lord-macos-arm64 -o /tmp/lord && sudo mv /tmp/lord /usr/local/bin/lord && sudo chmod +x /usr/local/bin/lord
 
 # macOS (Intel)
-curl -sL https://github.com/schmidthole/lord/releases/latest/download/lord-macos-amd64 -o /usr/local/bin/lord && chmod +x /usr/local/bin/lord
+curl -fsSL https://github.com/schmidthole/lord/releases/latest/download/lord-macos-amd64 -o /tmp/lord && sudo mv /tmp/lord /usr/local/bin/lord && sudo chmod +x /usr/local/bin/lord
 
 # Linux (x86_64)
-curl -sL https://github.com/schmidthole/lord/releases/latest/download/lord-linux-amd64 -o /usr/local/bin/lord && chmod +x /usr/local/bin/lord
+curl -fsSL https://github.com/schmidthole/lord/releases/latest/download/lord-linux-amd64 -o /tmp/lord && sudo mv /tmp/lord /usr/local/bin/lord && sudo chmod +x /usr/local/bin/lord
 ```
 
 **From Source**
