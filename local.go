@@ -66,7 +66,6 @@ func BuildContainer(imageName string, tag string, platform string, buildArgFile 
 		return err
 	}
 
-
 	return nil
 }
 
@@ -95,6 +94,12 @@ func BuildAndSaveContainer(imageName string, tag string, platform string, buildA
 	fmt.Println("saving container")
 
 	_, _, err = runLocalCommand(fmt.Sprintf("docker save %s -o %s.tar", tag, imageName))
+	if err != nil {
+		return err
+	}
+
+	// attempt to delete the .tar.gz in case it exists from a previous attempt
+	err = DeleteSavedContainer(imageName)
 	if err != nil {
 		return err
 	}
