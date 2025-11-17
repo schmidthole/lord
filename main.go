@@ -14,7 +14,7 @@ var banner = `
                                            
 `
 
-var version = "v1.2.2"
+var version = "v1.2.3"
 
 func main() {
 	fmt.Println(banner)
@@ -141,12 +141,14 @@ func main() {
 		}
 
 		if c.Registry == "" {
+			fmt.Println("direct loading container to server. this could take awhile...")
 			err = server.directLoadContainer(c.Name)
 
 			if err != nil {
 				printConsoleError("error direct loading container onto remote server", err)
 			}
 		} else {
+			fmt.Println("pulling container from registry onto server")
 			err = server.pullContainer(imageTag)
 
 			if err != nil {
