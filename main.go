@@ -34,6 +34,7 @@ func main() {
 	monitorFlag := flag.Bool("monitor", false, "get system stats from the server")
 	registryFlag := flag.Bool("registry", false, "ensure the container registry can be authenticated on the host, including installing platform specific login tools")
 	dozzleFlag := flag.Bool("dozzle", false, "open dozzle web ui for monitoring containers via ssh tunnel")
+	diffFlag := flag.Bool("diff", false, "compare local files with deployed files on the server")
 
 	flag.Parse()
 
@@ -208,6 +209,11 @@ func main() {
 		err = startDozzleUI(c.Server, c)
 		if err != nil {
 			printConsoleError("error starting and connecting dozzle ui", err)
+		}
+	} else if *diffFlag {
+		err = server.diffLocalAndRemote(c.Name)
+		if err != nil {
+			printConsoleError("error comparing local and remote files", err)
 		}
 	} else if !*serverFlag && !*recoverFlag && !*proxyFlag {
 		fmt.Println("not a valid command")

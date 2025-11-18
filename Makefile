@@ -1,4 +1,4 @@
-lord: config.go local.go main.go remote.go ssh_utils.go traefik.go go.mod go.sum  registry.go system_monitor.go error_utils.go
+lord: config.go local.go main.go remote.go ssh_utils.go traefik.go go.mod go.sum registry.go system_monitor.go error_utils.go dozzle.go diff.go
 	go build -o lord .
 
 build: lord
