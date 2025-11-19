@@ -86,6 +86,14 @@ func withSSHClient(address string, config *Config, f func(*ssh.Client) error) er
 }
 
 func runSSHCommand(client *ssh.Client, cmd string, appName string) (string, string, error) {
+	return runSSHCommandWithOutput(client, cmd, appName, true)
+}
+
+func runSSHCommandSilent(client *ssh.Client, cmd string, appName string) (string, string, error) {
+	return runSSHCommandWithOutput(client, cmd, appName, false)
+}
+
+func runSSHCommandWithOutput(client *ssh.Client, cmd string, appName string, verbose bool) (string, string, error) {
 	session, err := client.NewSession()
 	if err != nil {
 		panic(err)
@@ -100,7 +108,9 @@ func runSSHCommand(client *ssh.Client, cmd string, appName string) (string, stri
 		fullCmd = cmd
 	}
 
-	fmt.Printf("> %s\n", cmd)
+	if verbose {
+		fmt.Printf("> %s\n", cmd)
+	}
 
 	var stdoutBuf, stderrBuf bytes.Buffer
 	session.Stdout = &stdoutBuf
@@ -108,11 +118,15 @@ func runSSHCommand(client *ssh.Client, cmd string, appName string) (string, stri
 
 	err = session.Run(fullCmd)
 	if err != nil {
-		fmt.Println(stderrBuf.String())
+		if verbose {
+			fmt.Println(stderrBuf.String())
+		}
 		return stdoutBuf.String(), stderrBuf.String(), fmt.Errorf("command execution failed: %v", err)
 	}
 
-	fmt.Println(stdoutBuf.String())
+	if verbose {
+		fmt.Println(stdoutBuf.String())
+	}
 
 	return stdoutBuf.String(), stderrBuf.String(), nil
 }
