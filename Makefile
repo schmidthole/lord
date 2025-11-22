@@ -1,4 +1,6 @@
-lord: config.go local.go main.go remote.go ssh_utils.go traefik.go go.mod go.sum registry.go system_monitor.go error_utils.go dozzle.go diff.go
+SOURCES := $(wildcard *.go) go.mod go.sum
+
+lord: $(SOURCES)
 	go build -o lord .
 
 build: lord
@@ -8,3 +10,6 @@ install: lord
 
 clean:
 	rm -f lord
+
+format:
+	gofmt -w *.go
