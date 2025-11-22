@@ -216,9 +216,24 @@ Lord optionally supports the ability to push/pull a container via a supported re
 
 ## Registry Authentication
 
-Lord supports two methods for registry authentication:
+Lord supports three methods for registry authentication:
 
-### Method 1: Auth File (Manual)
+### Method 1: Username/Password File (Simplest)
+Provide a plain text file containing your registry username and password separated by a colon:
+
+```
+myusername:mypassword
+```
+
+Lord will automatically detect this format and perform a `docker login` on the remote host using these credentials. This is the simplest method for generic container registries.
+
+Example `lord.yml` configuration:
+```yaml
+registry: my.realregistry.com/me
+authfile: ./registry-auth.txt
+```
+
+### Method 2: Docker Config File (Advanced)
 Provide a `config.json` file with registry authentication that will be copied to your server:
 
 ```json
@@ -231,10 +246,12 @@ Provide a `config.json` file with registry authentication that will be copied to
 }
 ```
 
+Lord will automatically detect JSON format and copy this file to the remote host's `.docker/config.json`.
+
 **NOTE:** this method overwrites the entire `.docker/config.json` file on the host. In order to use this
 method, all containers on the host must share the same registry and authentication method.
 
-### Method 2: Dynamic Authentication (Recommended)
+### Method 3: Dynamic Authentication (Cloud Providers)
 Lord can automatically authenticate to supported registries using environment variables. Currently supported:
 
 - **AWS ECR** - requires AWS credentials
