@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -15,6 +16,32 @@ const (
 	RegistryDigitalOcean Registry = "digitalocean"
 	RegistryEcr          Registry = "ecr"
 )
+
+// isJsonFile checks if the file content is valid json
+func isJsonFile(content []byte) bool {
+	var js map[string]interface{}
+	return json.Unmarshal(content, &js) == nil
+}
+
+// parseUsernamePassword extracts username and password from a bare text file
+// expects format: username:password
+func parseUsernamePassword(content []byte) (string, string, error) {
+	contentStr := strings.TrimSpace(string(content))
+	parts := strings.SplitN(contentStr, ":", 2)
+
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("invalid username:password format, expected 'username:password'")
+	}
+
+	username := strings.TrimSpace(parts[0])
+	password := strings.TrimSpace(parts[1])
+
+	if username == "" || password == "" {
+		return "", "", fmt.Errorf("username and password cannot be empty")
+	}
+
+	return username, password, nil
+}
 
 func detectRegistryType(registryUrl string) Registry {
 	if strings.Contains(registryUrl, "amazonaws.com") {
@@ -173,8 +200,14 @@ func (r *remote) ensureRegistryAuthenticated(recover bool) error {
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		// only copy auth file if it exists and is specified
 		if r.config.AuthFile != "" {
-			_, err := os.Stat(r.config.AuthFile)
-			if err == nil {
+			authFileContent, err := os.ReadFile(r.config.AuthFile)
+			if err != nil {
+				return fmt.Errorf("no docker registry auth file found at: %s", r.config.AuthFile)
+			}
+
+			// detect if authfile is json or bare username:password
+			if isJsonFile(authFileContent) {
+				// handle json config.json format
 				dockerConfigPath := "/root/.docker"
 				if r.config.User != "root" {
 					dockerConfigPath = fmt.Sprintf("/home/%s/.docker", r.config.User)
@@ -192,7 +225,18 @@ func (r *remote) ensureRegistryAuthenticated(recover bool) error {
 					return err
 				}
 			} else {
-				return fmt.Errorf("no docker registry auth file found at: %s", r.config.AuthFile)
+				// handle bare username:password format
+				username, password, err := parseUsernamePassword(authFileContent)
+				if err != nil {
+					return fmt.Errorf("failed to parse auth file: %v", err)
+				}
+
+				fmt.Println("performing docker login with username/password")
+				loginCmd := fmt.Sprintf("echo '%s' | sudo docker login --username '%s' --password-stdin %s", password, username, r.config.Registry)
+				_, _, err = runSSHCommand(client, loginCmd, "")
+				if err != nil {
+					return fmt.Errorf("failed to login to registry: %v", err)
+				}
 			}
 		} else {
 			fmt.Println("no docker registry auth file specified, attempting docker login")
