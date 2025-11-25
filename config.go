@@ -87,7 +87,7 @@ func loadConfig(configKey string) (*Config, error) {
 	viper.SetDefault("target", "")
 	viper.SetDefault("platform", "linux/amd64")
 	viper.SetDefault("web", false)
-	viper.SetDefault("email", "admin@localshot")
+	viper.SetDefault("email", "admin@localhost.com")
 	viper.SetDefault("user", "root")
 
 	err := viper.ReadInConfig()
