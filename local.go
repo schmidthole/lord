@@ -79,7 +79,10 @@ func BuildAndPushContainer(imageName string, tag string, platform string, buildA
 
 	_, _, err = runLocalCommand(fmt.Sprintf("docker push %s", tag))
 	if err != nil {
-		return err
+		return fmt.Errorf(
+			"docker push err: %s, ENSURE YOU ARE LOGGED INTO YOUR REGISTRY LOCALLY. lord only authenticates the registry on the remote server, not your local machine",
+			err,
+		)
 	}
 
 	return nil
