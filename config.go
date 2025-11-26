@@ -25,13 +25,14 @@ server: 0.0.0.0
 # volumes:                               # additional volume mounts
 #   - /host/data:/container/data
 #   - /etc/config:/app/config
-# webadvancedconfig:                     # advanced traefik timeout and buffer settings (optional)
-#   readtimeout: 60                      # maximum duration in seconds for reading the entire request
-#   writetimeout: 60                     # maximum duration in seconds before timing out writes of the response
-#   idletimeout: 180                     # maximum duration in seconds an idle connection is kept alive
+# webadvancedconfig:                     # advanced reverse proxy timeout and buffer settings (optional)
 #   maxrequestbodybytes: 1048576         # maximum allowed size in bytes of the request body
 #   maxresponsebodybytes: 1048576        # maximum allowed size in bytes of the response body
 #   memrequestbodybytes: 1048576         # threshold in bytes after which request body is buffered to disk
+#   # DANGER: the config settings below will modify the global reverse proxy settings for all containers on the server
+#   readtimeout: 60                      # maximum duration in seconds for reading the entire request
+#   writetimeout: 60                     # maximum duration in seconds before timing out writes of the response
+#   idletimeout: 180                     # maximum duration in seconds an idle connection is kept alive
 `
 
 type WebAdvancedConfig struct {
