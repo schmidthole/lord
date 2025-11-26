@@ -13,3 +13,6 @@ clean:
 
 format:
 	gofmt -w *.go
+
+test:
+	go test -v ./...
