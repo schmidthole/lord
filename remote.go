@@ -295,6 +295,26 @@ func (r *remote) runContainer(name string, imageTag string, volumes []string, en
 			runCommand += fmt.Sprintf(" --label \"traefik.http.routers.%s.entryPoints=websecure\"", name)
 			runCommand += fmt.Sprintf(" --label \"traefik.http.routers.%s.tls.certresolver=theresolver\"", name)
 			runCommand += fmt.Sprintf(" --label \"traefik.http.services.%s.loadbalancer.server.port=80\"", name)
+
+			// web advanced config - buffering settings
+			hasBuffering := r.config.WebAdvancedConfig.MaxRequestBodyBytes != -1 ||
+				r.config.WebAdvancedConfig.MaxResponseBodyBytes != -1 ||
+				r.config.WebAdvancedConfig.MemRequestBodyBytes != -1
+
+			if hasBuffering {
+				if r.config.WebAdvancedConfig.MaxRequestBodyBytes != -1 {
+					runCommand += fmt.Sprintf(" --label \"traefik.http.middlewares.%s-buffering.buffering.maxrequestbodybytes=%d\"", name, r.config.WebAdvancedConfig.MaxRequestBodyBytes)
+				}
+				if r.config.WebAdvancedConfig.MaxResponseBodyBytes != -1 {
+					runCommand += fmt.Sprintf(" --label \"traefik.http.middlewares.%s-buffering.buffering.maxresponsebodybytes=%d\"", name, r.config.WebAdvancedConfig.MaxResponseBodyBytes)
+				}
+				if r.config.WebAdvancedConfig.MemRequestBodyBytes != -1 {
+					runCommand += fmt.Sprintf(" --label \"traefik.http.middlewares.%s-buffering.buffering.memrequestbodybytes=%d\"", name, r.config.WebAdvancedConfig.MemRequestBodyBytes)
+				}
+				// apply the buffering middleware to the router
+				runCommand += fmt.Sprintf(" --label \"traefik.http.routers.%s.middlewares=%s-buffering\"", name, name)
+			}
+
 			runCommand += " --network traefik"
 		}
 
