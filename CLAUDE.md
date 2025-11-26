@@ -7,11 +7,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `make build` - builds the lord binary from go source
 - `make install` - installs lord binary to /usr/local/bin (requires sudo)
 - `make clean` - removes the lord binary
+- `make test` - runs all unit tests
+- `make format` - formats all go source files
 - `go build -o lord .` - direct go build command
 
 ## Testing
 
-No unit tests are currently present in the codebase. All testing is done through manual integration testing with real deployments.
+Unit tests are present in the codebase for core functionality that doesn't require SSH/remote operations:
+- **traefik_test.go**: comprehensive tests for traefik configuration management, including YAML serialization/deserialization and timeout update logic
+
+All other testing is done through manual integration testing with real deployments.
 
 ## Code Architecture
 
@@ -36,6 +41,9 @@ Projects require a `lord.yml` file with deployment settings:
 - Target server details
 - Optional volumes, environment files, build args
 - Web service configuration (defaults to port 80)
+- Advanced web configuration (WebAdvancedConfig):
+  - Timeout settings: readTimeout, writeTimeout, idleTimeout (global Traefik settings)
+  - Buffering settings: maxRequestBodyBytes, maxResponseBodyBytes, memRequestBodyBytes (per-service)
 
 Multi-config support: Use `config.lord.yml` files and `-config config` flag for multiple deployment targets.
 
@@ -44,8 +52,12 @@ Multi-config support: Use `config.lord.yml` files and `-config config` flag for 
 1. Build Docker container locally with specified platform
 2. Push to configured registry OR save/transfer directly (registry-less deployment)
 3. SSH to target server and ensure Docker/Traefik setup
-4. Pull container and run with configured volumes/settings
-5. For web containers, configure Traefik routing
+4. If WebAdvancedConfig timeouts are set and Traefik is already running:
+   - Read existing Traefik config from /etc/traefik/traefik.yml
+   - Apply "maximum wins" logic: update timeouts only if new values are higher
+   - Restart Traefik container if config was updated
+5. Pull container and run with configured volumes/settings
+6. For web containers, configure Traefik routing with optional buffering middleware
 
 ### Registry Support
 

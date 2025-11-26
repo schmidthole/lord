@@ -142,6 +142,63 @@ sshkeyfile: /path/to/private/key      # custom ssh private key file
 volumes:
   - /host/data:/container/data
   - /etc/config:/app/config
+
+# advanced web configuration (optional)
+webadvancedconfig:
+  # timeout settings (affects global traefik reverse proxy - use with caution!)
+  readtimeout: 300                    # maximum duration in seconds for reading the entire request (0 = unlimited)
+  writetimeout: 300                   # maximum duration in seconds before timing out writes of the response (0 = unlimited)
+  idletimeout: 180                    # maximum duration in seconds an idle connection is kept alive
+
+  # buffering settings (per-service, safe to use)
+  maxrequestbodybytes: 10485760       # maximum allowed size in bytes of the request body (10MB)
+  maxresponsebodybytes: 10485760      # maximum allowed size in bytes of the response body (10MB)
+  memrequestbodybytes: 1048576        # threshold in bytes after which request body is buffered to disk (1MB)
+```
+
+## Advanced Web Configuration
+
+Lord supports advanced Traefik configuration for handling large file uploads/downloads and long-running requests. This is particularly useful for applications like container registries, file upload services, or long-polling APIs.
+
+### ⚠️ Timeout Settings (Use With Caution)
+
+The timeout settings (`readtimeout`, `writetimeout`, `idletimeout`) configure the **global Traefik reverse proxy** that serves all web containers on the host. These settings affect **every web application** deployed via Lord on the same server.
+
+**Important notes:**
+- Timeout values are specified in **seconds**
+- Setting a timeout to `0` means **unlimited** (no timeout)
+- Lord uses a "maximum wins" strategy: if multiple deployments specify different timeout values, the highest value is used globally
+- Once a timeout is increased, it will remain at that value unless manually changed in the Traefik config
+- Higher timeouts may increase vulnerability to slowloris attacks and resource exhaustion
+
+**When to use timeout settings:**
+- Hosting a Docker registry that needs to handle large image uploads
+- File upload services that may take several minutes
+- Long-polling or streaming APIs
+- Applications with slow clients or large request/response bodies
+
+**Example for a container registry:**
+```yaml
+webadvancedconfig:
+  readtimeout: 0      # unlimited - allow large image uploads
+  writetimeout: 0     # unlimited - allow large image downloads
+  idletimeout: 300    # 5 minutes - disconnect idle connections
+```
+
+### Buffering Settings (Per-Service)
+
+The buffering settings configure request/response body size limits on a **per-service basis** and are safe to use without affecting other applications.
+
+- `maxrequestbodybytes`: Maximum size of incoming request body (prevents oversized uploads)
+- `maxresponsebodybytes`: Maximum size of outgoing response body (prevents oversized downloads)
+- `memrequestbodybytes`: Size threshold before buffering to disk instead of memory
+
+**Example for large file uploads:**
+```yaml
+webadvancedconfig:
+  maxrequestbodybytes: 5368709120    # 5GB max upload
+  maxresponsebodybytes: 5368709120   # 5GB max download
+  memrequestbodybytes: 10485760      # buffer to disk after 10MB
 ```
 
 # Supported Linux Distributions
