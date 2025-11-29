@@ -1,5 +1,6 @@
 .DS_Store
 lord.yml
 Dockerfile
-lord
+/lord
 !easy-registry/Dockerfile
+!.claude/skills
