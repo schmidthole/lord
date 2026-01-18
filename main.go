@@ -35,6 +35,7 @@ func main() {
 	registryFlag := flag.Bool("registry", false, "ensure the container registry can be authenticated on the host, including installing platform specific login tools")
 	dozzleFlag := flag.Bool("dozzle", false, "open dozzle web ui for monitoring containers via ssh tunnel")
 	diffFlag := flag.Bool("diff", false, "compare local files with deployed files on the server")
+	restartFlag := flag.Bool("restart", false, "restart a running container without rebuilding")
 
 	flag.Parse()
 
@@ -214,6 +215,11 @@ func main() {
 		err = server.diffLocalAndRemote(c.Name)
 		if err != nil {
 			printConsoleError("error comparing local and remote files", err)
+		}
+	} else if *restartFlag {
+		err = server.restartContainer(c.Name)
+		if err != nil {
+			printConsoleError("error restarting container on remote server", err)
 		}
 	} else if !*serverFlag && !*recoverFlag && !*proxyFlag {
 		fmt.Println("not a valid command")

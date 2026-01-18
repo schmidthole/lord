@@ -230,6 +230,20 @@ func (r *remote) stopAndDeleteContainer(name string) error {
 	})
 }
 
+func (r *remote) restartContainer(name string) error {
+	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
+		fmt.Println("restarting container")
+
+		_, _, err := runSSHCommand(client, fmt.Sprintf("sudo docker restart %s", name), r.config.Name)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("container restarted successfully")
+		return nil
+	})
+}
+
 func (r *remote) getContainerStatus(name string) error {
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		fmt.Println("getting container status")
