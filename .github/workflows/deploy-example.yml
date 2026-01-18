@@ -1,0 +1,134 @@
+# Example GitHub Actions workflow for deploying with lord
+#
+# This workflow demonstrates how to deploy a Docker container using lord.
+# It supports both direct deployment (no registry) and standard registry deployment.
+#
+# Required GitHub Secrets:
+#   - SSH_PRIVATE_KEY: SSH private key for connecting to the target server
+#   - SERVER_HOST: IP address or hostname of the target server
+#
+# Optional GitHub Secrets (for registry deployment):
+#   - REGISTRY_URL: Container registry URL (e.g., registry.example.com/myuser)
+#   - REGISTRY_USERNAME: Registry login username
+#   - REGISTRY_PASSWORD: Registry login password
+#
+# Optional GitHub Secrets (for web deployments):
+#   - HOSTNAME: Domain name for the web service
+#   - LETSENCRYPT_EMAIL: Email for TLS certificate notifications
+
+name: Deploy with Lord
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: false
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  LORD_VERSION: 'v1.6.0'
+  # Set to 'true' to use direct deployment (no registry)
+  # Set to 'false' to use registry deployment
+  DIRECT_DEPLOY: 'false'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Optional: Login to container registry (skip if using direct deployment)
+      - name: Login to Container Registry
+        if: env.DIRECT_DEPLOY == 'false' && vars.REGISTRY_URL != ''
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.REGISTRY_URL }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Download lord binary
+        run: |
+          curl -L -o lord "https://github.com/schmidthole/lord/releases/download/${{ env.LORD_VERSION }}/lord-linux-amd64"
+          chmod +x lord
+          sudo mv lord /usr/local/bin/lord
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Disable strict host key checking for CI
+          cat >> ~/.ssh/config << EOF
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile=/dev/null
+            IdentityFile ~/.ssh/deploy_key
+          EOF
+
+      # Create lord.yml configuration
+      # You can either:
+      #   1. Check in your lord.yml to the repository (remove sensitive values)
+      #   2. Generate it dynamically from secrets (shown below)
+      - name: Create lord.yml configuration
+        run: |
+          cat > lord.yml << EOF
+          name: ${{ github.event.repository.name }}
+          server: ${{ secrets.SERVER_HOST }}
+          user: ${{ vars.SSH_USER || 'root' }}
+          sshkeyfile: ~/.ssh/deploy_key
+          platform: linux/amd64
+          EOF
+
+          # Add registry configuration if not using direct deployment
+          if [ "${{ env.DIRECT_DEPLOY }}" == "false" ] && [ -n "${{ vars.REGISTRY_URL }}" ]; then
+            echo "registry: ${{ vars.REGISTRY_URL }}" >> lord.yml
+          fi
+
+          # Add web configuration if hostname is set
+          if [ -n "${{ vars.HOSTNAME }}" ]; then
+            echo "web: true" >> lord.yml
+            echo "hostname: ${{ vars.HOSTNAME }}" >> lord.yml
+          fi
+
+          # Add email for TLS certificates if provided
+          if [ -n "${{ vars.LETSENCRYPT_EMAIL }}" ]; then
+            echo "email: ${{ vars.LETSENCRYPT_EMAIL }}" >> lord.yml
+          fi
+
+          echo "Generated lord.yml:"
+          cat lord.yml
+
+      # Optional: Create environment file from secrets
+      - name: Create environment file
+        if: vars.CREATE_ENV_FILE == 'true'
+        run: |
+          echo "${{ secrets.ENV_FILE_CONTENTS }}" > .env
+          echo "environmentfile: .env" >> lord.yml
+
+      - name: Deploy with lord
+        run: |
+          lord -deploy
+
+      - name: Verify deployment
+        run: |
+          lord -status
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f ~/.ssh/deploy_key
+          rm -f lord.yml
+          rm -f .env 2>/dev/null || true
