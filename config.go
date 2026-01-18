@@ -25,6 +25,8 @@ server: 0.0.0.0
 # volumes:                               # additional volume mounts
 #   - /host/data:/container/data
 #   - /etc/config:/app/config
+# memory: 512m                           # container memory limit (e.g., 256m, 1g, 2g)
+# cpus: 1.0                              # container cpu limit (e.g., 0.5, 1, 2)
 # webadvancedconfig:                     # advanced reverse proxy timeout and buffer settings (optional)
 #   maxrequestbodybytes: 1048576         # maximum allowed size in bytes of the request body
 #   maxresponsebodybytes: 1048576        # maximum allowed size in bytes of the response body
@@ -103,6 +105,12 @@ type Config struct {
 
 	// advanced web configuration for traefik timeouts and buffer settings (optional)
 	WebAdvancedConfig WebAdvancedConfig
+
+	// container memory limit (e.g., "256m", "1g", "2g") (optional)
+	Memory string
+
+	// container cpu limit (e.g., "0.5", "1", "2") (optional)
+	CPUs string
 }
 
 func loadConfig(configKey string) (*Config, error) {

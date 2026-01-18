@@ -289,6 +289,14 @@ func (r *remote) runContainer(name string, imageTag string, volumes []string, en
 			runCommand += fmt.Sprintf(" -v %s", volume)
 		}
 
+		// container resource limits
+		if r.config.Memory != "" {
+			runCommand += fmt.Sprintf(" --memory %s", r.config.Memory)
+		}
+		if r.config.CPUs != "" {
+			runCommand += fmt.Sprintf(" --cpus %s", r.config.CPUs)
+		}
+
 		if web {
 			runCommand += " --label \"traefik.enable=true\""
 			runCommand += fmt.Sprintf(" --label \"traefik.http.routers.%s.rule=Host(\\`%s\\`) || Host(\\`www.%s\\`)\"", name, hostname, hostname)
