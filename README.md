@@ -130,6 +130,7 @@ authfile: ./config.json               # docker registry auth file
 email: user@example.com               # email for tls certificates
 platform: linux/amd64                 # build platform (default: linux/amd64)
 target: production                    # docker build target stage
+gpus: all                             # optional gpu access (only all is supported)
 web: true                             # enable web service with traefik
 hostname: myapp.example.com           # domain name (required if web: true)
 environmentfile: .env                 # container environment variables file
@@ -362,3 +363,10 @@ Lord is very simple and focused, but could get more features in the future. Thes
 # License
 
 BSD 3-Clause License - see LICENSE file for details.
+
+## GPU containers
+
+Set `gpus: all` to pass `--gpus all` to Docker. Omitting it preserves the default
+container behavior. Other values are rejected. Install the NVIDIA driver and
+NVIDIA Container Toolkit on the host and configure the Docker runtime before
+deploying; Lord does not install these GPU dependencies.

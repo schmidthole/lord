@@ -14,6 +14,7 @@ server: 0.0.0.0
 # registry: my.realregistry.com/me       # container registry url (optional if using direct deployments)
 # authfile: ./config.json                # docker registry auth file (required if using fixed login/auth for registry)
 # platform: linux/amd64                  # build platform
+# gpus: all                             # expose all host gpus (requires nvidia container toolkit)
 # target: production                     # docker build target stage
 # web: false                             # enable web service with traefik (defaults to false)
 # hostname: myapp.example.com            # domain name (required if web: true)
@@ -56,6 +57,9 @@ type WebAdvancedConfig struct {
 }
 
 type Config struct {
+	// optional gpu access; only all is supported
+	GPUs string
+
 	// name of the application/container, must be unique per remote host (required)
 	Name string
 
@@ -138,6 +142,10 @@ func loadConfig(configKey string) (*Config, error) {
 	err = viper.Unmarshal(&c)
 	if err != nil {
 		return nil, err
+	}
+
+	if c.GPUs != "" && c.GPUs != "all" {
+		return nil, fmt.Errorf("gpus must be omitted or all")
 	}
 
 	fmt.Println("config loaded")
