@@ -23,6 +23,8 @@ server: 0.0.0.0
 # hostenvironmentfile: host.env          # host environment variables file (required if using a registry with dynamic login)
 # user: root                             # ssh login user
 # sshkeyfile: /path/to/private/key       # custom ssh private key file (uses system default if not specified)
+# ports:                                 # optional published ports, independent of web/traefik
+#   - "127.0.0.1:8080:80"                # host IP:host port:container port
 # volumes:                               # additional volume mounts
 #   - /host/data:/container/data
 #   - /etc/config:/app/config
@@ -57,6 +59,9 @@ type WebAdvancedConfig struct {
 }
 
 type Config struct {
+	// Docker port publications: [host IP:]host port:container port[/protocol].
+	Ports []string
+
 	// optional gpu access; only all is supported
 	GPUs string
 
@@ -146,6 +151,12 @@ func loadConfig(configKey string) (*Config, error) {
 
 	if c.GPUs != "" && c.GPUs != "all" {
 		return nil, fmt.Errorf("gpus must be omitted or all")
+	}
+
+	for _, port := range c.Ports {
+		if err := validatePortMapping(port); err != nil {
+			return nil, fmt.Errorf("invalid ports entry %q: %w", port, err)
+		}
 	}
 
 	fmt.Println("config loaded")

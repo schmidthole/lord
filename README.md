@@ -139,6 +139,10 @@ hostenvironmentfile: host.env         # host environment variables file
 user: ubuntu                          # ssh login user (default: root)
 sshkeyfile: /path/to/private/key      # custom ssh private key file
 
+# optional port publications (independent of web/traefik)
+ports:
+  - "127.0.0.1:8080:80"
+
 # additional volume mounts (follows docker format)
 volumes:
   - /host/data:/container/data
@@ -156,6 +160,40 @@ webadvancedconfig:
   maxresponsebodybytes: 10485760      # maximum allowed size in bytes of the response body (10MB)
   memrequestbodybytes: 1048576        # threshold in bytes after which request body is buffered to disk (1MB)
 ```
+
+## Published Ports
+
+Use `ports` to publish container ports directly on the deployment host. Each
+quoted entry accepts `[host IP:]host port:container port[/protocol]`, with
+numeric ports from 1 to 65535 and an optional `tcp` (default), `udp`, or `sctp`
+protocol. IPv6 addresses must be bracketed, for example `[::1]:8080:80`.
+Hostnames, port ranges, and automatic host-port allocation are not supported.
+Omitting `ports` preserves the existing behavior.
+
+For a service available only on the deployment host:
+
+```yaml
+name: radio
+server: 127.0.0.1
+web: false
+ports:
+  - "127.0.0.1:8080:80"
+```
+
+This publishes container port 80 at `http://127.0.0.1:8080` without configuring
+Traefik, a hostname, or certificates. `server` remains the SSH deployment target;
+port bindings apply on that target. To accept IPv6 localhost connections too,
+add `"[::1]:8080:80"`.
+
+An entry such as `"8080:80"` uses Docker's default host binding (normally all
+interfaces). Specify a loopback IP when access should stay local. Ports can also
+be published with `web: true`; these bindings provide direct access independently
+of Traefik's HTTPS routes. Existing Traefik behavior is unchanged.
+
+A loopback HTTP endpoint can later be shared within a tailnet using
+[Tailscale Serve](https://tailscale.com/docs/reference/tailscale-cli/serve):
+`tailscale serve --bg http://127.0.0.1:8080`. This requires Tailscale setup on the
+host, but no further Lord configuration changes.
 
 ## Advanced Web Configuration
 
