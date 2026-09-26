@@ -374,6 +374,9 @@ func (r *remote) containerRunCommand(name string, imageTag string, volumes []str
 	if r.config.GPUs == "all" {
 		runCommand += " --gpus all"
 	}
+	for _, port := range r.config.Ports {
+		runCommand += " --publish " + shellQuotePort(port)
+	}
 	runCommand += fmt.Sprintf(" --name %s", name)
 	runCommand += fmt.Sprintf(" -v /var/%s:/data", name)
 
