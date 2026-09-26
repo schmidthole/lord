@@ -281,48 +281,7 @@ func (r *remote) runContainer(name string, imageTag string, volumes []string, en
 	return withSSHClient(r.address, r.config, func(client *ssh.Client) error {
 		fmt.Println("running container")
 
-		runCommand := "sudo docker run -d --restart unless-stopped"
-		runCommand += fmt.Sprintf(" --name %s", name)
-		runCommand += fmt.Sprintf(" -v /var/%s:/data", name)
-
-		for _, volume := range volumes {
-			runCommand += fmt.Sprintf(" -v %s", volume)
-		}
-
-		if web {
-			runCommand += " --label \"traefik.enable=true\""
-			runCommand += fmt.Sprintf(" --label \"traefik.http.routers.%s.rule=Host(\\`%s\\`) || Host(\\`www.%s\\`)\"", name, hostname, hostname)
-			runCommand += fmt.Sprintf(" --label \"traefik.http.routers.%s.entryPoints=websecure\"", name)
-			runCommand += fmt.Sprintf(" --label \"traefik.http.routers.%s.tls.certresolver=theresolver\"", name)
-			runCommand += fmt.Sprintf(" --label \"traefik.http.services.%s.loadbalancer.server.port=80\"", name)
-
-			// web advanced config - buffering settings
-			hasBuffering := r.config.WebAdvancedConfig.MaxRequestBodyBytes != -1 ||
-				r.config.WebAdvancedConfig.MaxResponseBodyBytes != -1 ||
-				r.config.WebAdvancedConfig.MemRequestBodyBytes != -1
-
-			if hasBuffering {
-				if r.config.WebAdvancedConfig.MaxRequestBodyBytes != -1 {
-					runCommand += fmt.Sprintf(" --label \"traefik.http.middlewares.%s-buffering.buffering.maxrequestbodybytes=%d\"", name, r.config.WebAdvancedConfig.MaxRequestBodyBytes)
-				}
-				if r.config.WebAdvancedConfig.MaxResponseBodyBytes != -1 {
-					runCommand += fmt.Sprintf(" --label \"traefik.http.middlewares.%s-buffering.buffering.maxresponsebodybytes=%d\"", name, r.config.WebAdvancedConfig.MaxResponseBodyBytes)
-				}
-				if r.config.WebAdvancedConfig.MemRequestBodyBytes != -1 {
-					runCommand += fmt.Sprintf(" --label \"traefik.http.middlewares.%s-buffering.buffering.memrequestbodybytes=%d\"", name, r.config.WebAdvancedConfig.MemRequestBodyBytes)
-				}
-				// apply the buffering middleware to the router
-				runCommand += fmt.Sprintf(" --label \"traefik.http.routers.%s.middlewares=%s-buffering\"", name, name)
-			}
-
-			runCommand += " --network traefik"
-		}
-
-		if environmentFile != "" {
-			runCommand += fmt.Sprintf(" --env-file /etc/%s/%s.env", name, name)
-		}
-
-		runCommand += fmt.Sprintf(" %s", imageTag)
+		runCommand := r.containerRunCommand(name, imageTag, volumes, environmentFile, web, hostname)
 
 		_, _, err := runSSHCommand(client, runCommand, r.config.Name)
 		if err != nil {
@@ -408,4 +367,53 @@ func (r *remote) downloadContainerLogs(name string) error {
 
 		return os.WriteFile(localLogPath, []byte(logs), 0644)
 	})
+}
+
+func (r *remote) containerRunCommand(name string, imageTag string, volumes []string, environmentFile string, web bool, hostname string) string {
+	runCommand := "sudo docker run -d --restart unless-stopped"
+	if r.config.GPUs == "all" {
+		runCommand += " --gpus all"
+	}
+	runCommand += fmt.Sprintf(" --name %s", name)
+	runCommand += fmt.Sprintf(" -v /var/%s:/data", name)
+
+	for _, volume := range volumes {
+		runCommand += fmt.Sprintf(" -v %s", volume)
+	}
+
+	if web {
+		runCommand += " --label \"traefik.enable=true\""
+		runCommand += fmt.Sprintf(" --label \"traefik.http.routers.%s.rule=Host(\\`%s\\`) || Host(\\`www.%s\\`)\"", name, hostname, hostname)
+		runCommand += fmt.Sprintf(" --label \"traefik.http.routers.%s.entryPoints=websecure\"", name)
+		runCommand += fmt.Sprintf(" --label \"traefik.http.routers.%s.tls.certresolver=theresolver\"", name)
+		runCommand += fmt.Sprintf(" --label \"traefik.http.services.%s.loadbalancer.server.port=80\"", name)
+
+		// web advanced config - buffering settings
+		hasBuffering := r.config.WebAdvancedConfig.MaxRequestBodyBytes != -1 ||
+			r.config.WebAdvancedConfig.MaxResponseBodyBytes != -1 ||
+			r.config.WebAdvancedConfig.MemRequestBodyBytes != -1
+
+		if hasBuffering {
+			if r.config.WebAdvancedConfig.MaxRequestBodyBytes != -1 {
+				runCommand += fmt.Sprintf(" --label \"traefik.http.middlewares.%s-buffering.buffering.maxrequestbodybytes=%d\"", name, r.config.WebAdvancedConfig.MaxRequestBodyBytes)
+			}
+			if r.config.WebAdvancedConfig.MaxResponseBodyBytes != -1 {
+				runCommand += fmt.Sprintf(" --label \"traefik.http.middlewares.%s-buffering.buffering.maxresponsebodybytes=%d\"", name, r.config.WebAdvancedConfig.MaxResponseBodyBytes)
+			}
+			if r.config.WebAdvancedConfig.MemRequestBodyBytes != -1 {
+				runCommand += fmt.Sprintf(" --label \"traefik.http.middlewares.%s-buffering.buffering.memrequestbodybytes=%d\"", name, r.config.WebAdvancedConfig.MemRequestBodyBytes)
+			}
+			// apply the buffering middleware to the router
+			runCommand += fmt.Sprintf(" --label \"traefik.http.routers.%s.middlewares=%s-buffering\"", name, name)
+		}
+
+		runCommand += " --network traefik"
+	}
+
+	if environmentFile != "" {
+		runCommand += fmt.Sprintf(" --env-file /etc/%s/%s.env", name, name)
+	}
+
+	runCommand += fmt.Sprintf(" %s", imageTag)
+	return runCommand
 }
